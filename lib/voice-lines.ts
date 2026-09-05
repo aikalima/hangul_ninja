@@ -2,14 +2,14 @@ export const VOICE_LINES = {
   courseComplete: {
     id: 'course-complete',
     file: 'course-complete',
-    ko: '축하한다! 모든 수련을 마쳤구나. 정말 자랑스럽다!',
-    en: 'Congratulations! You’ve completed all your training. I’m proud of you!',
+    ko: '모든 수련을 마친 것을 축하한다!',
+    en: 'Congratulations on completing all your training!',
   },
   levelComplete: {
     id: 'level-complete',
     file: 'level-complete',
-    ko: '축하한다! 이번 수련을 훌륭하게 마쳤구나. 다음 단계로 나아갈 준비가 됐다!',
-    en: 'Congratulations! You’ve completed this level. You’re ready for the next level!',
+    ko: '이번 수련을 마친 것을 축하한다!',
+    en: 'Congratulations on completing this level!',
   },
   intro: { id: 'intro', file: 'giyeok', ko: '기역.', en: 'Giyeok — ㄱ.' },
   success: {

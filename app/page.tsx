@@ -374,7 +374,7 @@ export default function Home() {
                       : stage === 'intro'
                         ? `Begin Level ${levelIndex + 1}`
                         : stage === 'character-complete'
-                          ? `Next: ${characters[Math.min(characters.length - 1, index + 1)].glyph} in 3 seconds`
+                          ? 'Character complete'
                           : 'Restart character'}
               <ArrowRight size={18} />
             </button>

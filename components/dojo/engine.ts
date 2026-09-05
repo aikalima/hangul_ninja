@@ -322,7 +322,7 @@ export function createDojo(
                       ? 'All six levels complete!'
                       : `Level ${levelIndex + 1} complete · Ready for Level ${levelIndex + 2}`
                     : stage === 'character-complete'
-                      ? `${vowel.glyph} complete · Next character in 3 seconds.`
+                      ? `${vowel.glyph} complete`
                       : watching
                         ? `Watch ${vowel.glyph}: follow each cut in order.`
                         : `${Math.min(lesson.completedCuts + 1, vowel.cuts.length)} / ${vowel.cuts.length} · ${vowel.directions[lesson.completedCuts] ?? 'Complete'}`;
@@ -488,7 +488,7 @@ export function createDojo(
       renderer.xr.isPresenting
         ? phase === 'complete'
           ? stage === 'character-complete'
-            ? 'Next character appears automatically'
+            ? ''
             : 'Press trigger to continue'
           : 'Hold trigger to cut · Release between strokes · Grip: recenter'
         : 'Drag along each numbered cut · Release to reposition',
