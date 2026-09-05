@@ -58,7 +58,7 @@ export default function Home() {
   const [xr, setXR] = useState(false);
   const [error, setError] = useState('');
   const [sound, setSound] = useState(true);
-  const [music, setMusic] = useState(false);
+  const [music, setMusic] = useState(true);
   const [masterVoice, setMasterVoice] = useState(true);
   const [pronunciation, setPronunciation] =
     useState<PronunciationMode>('sound');

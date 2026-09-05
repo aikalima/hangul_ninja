@@ -98,12 +98,12 @@ void test('audio stays locked until interaction and initializes only once', () =
   audio.unlock();
   audio.unlock();
   assert.equal(stats().creates, 1);
-  assert.equal(gains[1].gain.value, 0);
+  assert.equal(gains[1].gain.value, 0.25);
   const before = stats().starts;
   audio.tick(1);
-  assert.equal(stats().starts, before);
+  assert.ok(stats().starts > before);
   audio.setMusic(true);
-  assert.equal(gains[1].gain.value, 0.65);
+  assert.equal(gains[1].gain.value, 0.25);
   audio.dispose();
   assert.equal(stats().closes, 1);
 });
@@ -129,7 +129,7 @@ void test('music and effects mute independently and volume clamps', () => {
   audio.setVolume(-1);
   assert.equal(gains[0].gain.value, 0);
   audio.setMusic(true);
-  assert.equal(gains[1].gain.value, 0.65);
+  assert.equal(gains[1].gain.value, 0.25);
   assert.equal(gains[2].gain.value, 0);
   audio.dispose();
 });
@@ -159,9 +159,9 @@ void test('voice ducking restores music without overriding mute', () => {
   audio.unlock();
   audio.setMusic(true);
   audio.duck(true);
-  assert.equal(gains[1].gain.value, 0.18);
+  assert.equal(gains[1].gain.value, 0.07);
   audio.duck(false);
-  assert.equal(gains[1].gain.value, 0.65);
+  assert.equal(gains[1].gain.value, 0.25);
   audio.setMusic(false);
   audio.duck(true);
   audio.duck(false);

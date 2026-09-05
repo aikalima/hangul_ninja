@@ -11,7 +11,7 @@ Learn to recognize and draw Hangul through katana flow cuts in a stationary 3D d
 - Ordered straight, diagonal, and curved cuts, with demonstrations and progress feedback.
 - Bundled Korean pronunciation and master dialogue, with English translations above the dojo.
 - Rotating encouragement and anime celebrations that remain visible until replaced or cleared by a mistake.
-- Sword effects and optional background music. Music starts off.
+- Sword effects and optional background music. Music starts enabled at a low volume after the first interaction.
 
 ## Install and run
 
