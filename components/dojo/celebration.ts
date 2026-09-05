@@ -29,7 +29,18 @@ export function createCelebration(root: THREE.Group, slot: HTMLElement | null) {
   let age = 4;
   let next = 0;
   let style = 0;
-  const skin = '#f1ba91';
+  const skin = '#ffd2b1';
+  function shape(points: number[][], fill: string) {
+    c.beginPath();
+    points.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
+    c.closePath();
+    c.fillStyle = fill;
+    c.fill();
+    c.strokeStyle = '#182339';
+    c.lineWidth = 6;
+    c.lineJoin = 'round';
+    c.stroke();
+  }
   function stroke(points: number[][], color: string, width: number) {
     c.beginPath();
     points.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
@@ -58,8 +69,8 @@ export function createCelebration(root: THREE.Group, slot: HTMLElement | null) {
     c.restore();
   }
   function arm(points: number[][]) {
-    stroke(points, '#d7b578', 57);
-    stroke(points, '#314e4d', 45);
+    stroke(points, '#172338', 59);
+    stroke(points, '#354766', 45);
   }
   function ok(x: number, y: number, flip: number) {
     c.save();
@@ -102,8 +113,39 @@ export function createCelebration(root: THREE.Group, slot: HTMLElement | null) {
     const bob = Math.sin(t * 4) * 5;
     c.save();
     c.translate(0, bob);
-    // Shoulders, robe, crossed lapels and gold belt.
-    oval(384, 510, 101, 93, '#314e4d');
+    // Angular, cel-shaded ninja jacket and a loose scarf tail.
+    shape(
+      [
+        [398, 465],
+        [507, 477],
+        [561, 451 + Math.sin(t * 5) * 9],
+        [524, 508],
+        [444, 497],
+      ],
+      '#f16b69',
+    );
+    shape(
+      [
+        [315, 455],
+        [369, 437],
+        [444, 453],
+        [481, 522],
+        [462, 584],
+        [299, 584],
+        [281, 519],
+      ],
+      '#354766',
+    );
+    shape(
+      [
+        [383, 462],
+        [444, 453],
+        [481, 522],
+        [462, 584],
+        [404, 584],
+      ],
+      '#23304b',
+    );
     stroke(
       [
         [335, 454],
@@ -193,65 +235,189 @@ export function createCelebration(root: THREE.Group, slot: HTMLElement | null) {
     c.save();
     c.translate(384, 382 + bow * 34);
     c.scale(1, 1 - bow * 0.16);
-    oval(0, -8, 77, 88, '#203b3a');
-    oval(0, -4, 65, 68, skin);
-    oval(0, -57, 77, 34, '#e8e0c7');
-    stroke(
+    // Silver spikes and a tapered face silhouette read clearly at icon size.
+    shape(
       [
-        [-65, -46],
-        [65, -46],
+        [-74, -34],
+        [-92, -71],
+        [-60, -66],
+        [-67, -111],
+        [-34, -92],
+        [-12, -126],
+        [6, -101],
+        [42, -124],
+        [43, -91],
+        [82, -101],
+        [69, -64],
+        [90, -49],
+        [68, -16],
       ],
-      '#d7b578',
-      14,
+      '#d8ecf4',
     );
-    // Smiling closed eyes and eyebrows.
+    shape(
+      [
+        [-64, -55],
+        [63, -55],
+        [68, 12],
+        [44, 48],
+        [0, 72],
+        [-45, 46],
+        [-69, 9],
+      ],
+      skin,
+    );
+    shape(
+      [
+        [40, -49],
+        [63, -55],
+        [68, 12],
+        [44, 48],
+        [0, 72],
+        [22, 40],
+      ],
+      '#eaa084',
+    );
+    // Headband with an original diamond crest.
+    shape(
+      [
+        [-76, -64],
+        [70, -64],
+        [73, -33],
+        [-71, -31],
+      ],
+      '#182b47',
+    );
+    shape(
+      [
+        [-24, -63],
+        [24, -63],
+        [24, -32],
+        [-24, -32],
+      ],
+      '#b7d7e1',
+    );
+    shape(
+      [
+        [0, -58],
+        [12, -48],
+        [0, -38],
+        [-12, -48],
+      ],
+      '#48d7d1',
+    );
+    shape(
+      [
+        [-68, -80],
+        [-28, -92],
+        [-40, -49],
+      ],
+      '#f1f9ff',
+    );
+    shape(
+      [
+        [31, -94],
+        [68, -80],
+        [52, -45],
+      ],
+      '#f1f9ff',
+    );
+    // A confident anime eye and playful wink, with bright iris highlights.
+    shape(
+      [
+        [-49, -10],
+        [-32, -18],
+        [-12, -9],
+        [-21, 9],
+        [-40, 8],
+      ],
+      '#f5fbff',
+    );
+    oval(-29, -2, 9, 13, '#30bfc4');
+    oval(-28, -1, 4, 9, '#172338');
+    oval(-32, -8, 4, 4, '#ffffff');
     stroke(
       [
-        [-40, -12],
-        [-28, -18],
-        [-16, -12],
+        [-50, -12],
+        [-32, -19],
+        [-11, -9],
       ],
-      '#313837',
+      '#172338',
+      7,
+    );
+    if (style === 1) {
+      shape(
+        [
+          [13, -10],
+          [32, -18],
+          [50, -10],
+          [41, 9],
+          [23, 9],
+        ],
+        '#f5fbff',
+      );
+      oval(31, -1, 9, 13, '#30bfc4');
+      oval(32, -1, 4, 9, '#172338');
+      oval(28, -8, 4, 4, '#ffffff');
+    } else
+      stroke(
+        [
+          [15, 0],
+          [31, -9],
+          [49, 0],
+        ],
+        '#172338',
+        7,
+      );
+    stroke(
+      [
+        [-47, -27],
+        [-17, -23],
+      ],
+      '#172338',
       6,
     );
     stroke(
       [
-        [16, -12],
-        [28, -18],
-        [40, -12],
+        [18, -24],
+        [45, -30],
       ],
-      '#313837',
+      '#172338',
       6,
     );
     stroke(
       [
-        [-44, -30],
-        [-18, -33],
+        [-12, 32],
+        [6, 37],
+        [25, 27],
       ],
-      '#f8eed6',
-      9,
+      '#853f43',
+      5,
     );
     stroke(
       [
-        [18, -33],
-        [44, -30],
+        [-9, 32],
+        [8, 33],
       ],
-      '#f8eed6',
-      9,
+      '#fff8eb',
+      5,
     );
-    c.beginPath();
-    c.arc(0, 12, 22, 0.2, Math.PI - 0.2);
-    c.strokeStyle = '#824c3c';
-    c.lineWidth = 5;
-    c.stroke();
-    oval(-43, 12, 12, 7, '#e89383');
-    oval(43, 12, 12, 7, '#e89383');
-    // Small master's beard.
-    c.beginPath();
-    c.moveTo(-27, 45);
-    c.quadraticCurveTo(0, 108, 27, 45);
-    c.fillStyle = '#f8eed6';
-    c.fill();
+    // Small cheek marks retain the friendly celebration tone.
+    stroke(
+      [
+        [-49, 20],
+        [-43, 26],
+      ],
+      '#e17e82',
+      4,
+    );
+    stroke(
+      [
+        [-38, 19],
+        [-32, 25],
+      ],
+      '#e17e82',
+      4,
+    );
     c.restore();
     if (style === 0) {
       // Folded fingers, with thumb crossing the upright index finger.
