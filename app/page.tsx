@@ -8,6 +8,7 @@ import {
   Crosshair,
   Headset,
   Maximize2,
+  Music2,
   MousePointer2,
   Play,
   RotateCcw,
@@ -17,6 +18,7 @@ import {
   VolumeX,
   X,
 } from 'lucide-react';
+import type { PracticeMode } from '@/lib/tracing';
 import type { DojoAPI, DojoStatus } from '@/components/dojo/engine';
 
 export default function Home() {
@@ -26,12 +28,15 @@ export default function Home() {
   const [status, setStatus] = useState<DojoStatus>({
     progress: 0,
     phase: 'ready',
-    message: 'Start at the glowing circle.',
+    message: 'Sweep left to right through the guide.',
   });
   const [loaded, setLoaded] = useState(false);
   const [xr, setXR] = useState(false);
   const [error, setError] = useState('');
-  const [sound, setSound] = useState(false);
+  const [sound, setSound] = useState(true);
+  const [music, setMusic] = useState(true);
+  const [volume, setVolume] = useState(50);
+  const [mode, setMode] = useState<PracticeMode>('flow');
   const [help, setHelp] = useState(false);
   useEffect(() => {
     let disposed = false;
@@ -85,7 +90,7 @@ export default function Home() {
             </h1>
           </div>
           <div className="prototype">
-            <span /> WEBXR PROTOTYPE <b>v0.1</b>
+            <span /> WEBXR PROTOTYPE <b>v0.2</b>
           </div>
         </div>
         <div className="dojo-layout">
@@ -104,11 +109,18 @@ export default function Home() {
             )}
             <div className="scene-caption">
               <span className="scene-line" />
-              <span>STAY PRESENT. FOLLOW THE STROKE.</span>
+              <span>
+                {mode === 'flow'
+                  ? 'SWEEP. RECOVER. STRIKE.'
+                  : 'STAY PRESENT. FOLLOW THE STROKE.'}
+              </span>
             </div>
             <div className="scene-bottom">
               <span>
-                <MousePointer2 size={16} /> Hold & drag to trace
+                <MousePointer2 size={16} />{' '}
+                {mode === 'flow'
+                  ? 'Drag right, then slash down'
+                  : 'Hold & drag to trace'}
               </span>
               <div>
                 <button
@@ -153,16 +165,51 @@ export default function Home() {
               <br />
               The first step in your Hangul journey.
             </p>
+            <div className="practice-modes" aria-label="Practice mode">
+              <button
+                disabled={!loaded}
+                aria-pressed={mode === 'flow'}
+                onClick={() => {
+                  api.current?.setMode('flow');
+                  setMode('flow');
+                }}
+              >
+                <Swords size={15} />
+                Flow cuts
+              </button>
+              <button
+                disabled={!loaded}
+                aria-pressed={mode === 'trace'}
+                onClick={() => {
+                  api.current?.setMode('trace');
+                  setMode('trace');
+                }}
+              >
+                Precise trace
+              </button>
+            </div>
             <div className="divider" />
             <div className="section-label">
               <span>THE MOVEMENT</span>
-              <span>1 CONTINUOUS STROKE</span>
+              <span>
+                {mode === 'flow' ? '2 CUT COMBO' : '1 CONTINUOUS STROKE'}
+              </span>
             </div>
             <div className={`movement ${status.progress >= 50 ? 'done' : ''}`}>
               <span className="step-number">01</span>
               <div>
-                <strong>Across, then down</strong>
-                <p>Start left. Move right. Turn down.</p>
+                <strong>
+                  {mode === 'flow'
+                    ? status.progress >= 50
+                      ? '02 · Downward cut'
+                      : '01 · Rightward slash'
+                    : 'Across, then down'}
+                </strong>
+                <p>
+                  {mode === 'flow'
+                    ? 'Sweep across. Recover. Strike down.'
+                    : 'Start left. Move right. Turn down.'}
+                </p>
               </div>
               <div className="direction">
                 <ArrowRight size={18} />
@@ -172,8 +219,9 @@ export default function Home() {
             <div className="tip">
               <Sparkles size={17} />
               <p>
-                Keep your sword moving through the corner. One smooth, unbroken
-                stroke.
+                {mode === 'flow'
+                  ? 'Use broad, controlled sword arcs. Release between cuts to reset your stance. The first cut stays lit.'
+                  : 'Keep your sword moving through the corner. One smooth, unbroken stroke.'}
               </p>
             </div>
             <div className="progress-section">
@@ -215,7 +263,9 @@ export default function Home() {
               )}{' '}
               {status.phase === 'complete'
                 ? 'Practice again'
-                : 'Begin practice'}
+                : mode === 'flow'
+                  ? 'Begin flow practice'
+                  : 'Begin practice'}
               <ArrowRight size={18} />
             </button>
             <button
@@ -236,17 +286,53 @@ export default function Home() {
             <i />
             Take it at your pace
           </div>
-          <button
-            className="sound-button"
-            onClick={() => {
-              api.current?.setSound(!sound);
-              setSound(!sound);
-            }}
-          >
-            {sound ? <Volume2 size={17} /> : <VolumeX size={17} />}Sound{' '}
-            {sound ? 'on' : 'off'}
-          </button>
+          <div className="audio-controls">
+            <button
+              disabled={!loaded}
+              aria-pressed={sound}
+              className="sound-button"
+              onClick={() => {
+                api.current?.setSound(!sound);
+                setSound(!sound);
+              }}
+            >
+              {sound ? <Volume2 size={17} /> : <VolumeX size={17} />}Effects{' '}
+              {sound ? 'on' : 'off'}
+            </button>
+            <button
+              disabled={!loaded}
+              aria-pressed={music}
+              className="sound-button"
+              onClick={() => {
+                api.current?.setMusic(!music);
+                setMusic(!music);
+              }}
+            >
+              <Music2 size={17} />
+              Music {music ? 'on' : 'off'}
+            </button>
+            <label className="volume-control">
+              Volume
+              <input
+                aria-label="Audio volume"
+                disabled={!loaded}
+                type="range"
+                min="0"
+                max="100"
+                value={volume}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  setVolume(value);
+                  api.current?.setVolume(value / 100);
+                }}
+              />
+            </label>
+          </div>
         </div>
+        <p className="audio-hint">
+          Music and effects start with your first interaction. Headphones bring
+          the sword sounds into your space.
+        </p>
         <section className="vr-strip">
           <div className="vr-icon">
             <Headset size={27} />
@@ -310,17 +396,27 @@ export default function Home() {
         <h2 id="help-title">One stroke at a time.</h2>
         <h3>On desktop</h3>
         <p>
-          Hold the mouse button at the glowing start circle. Drag right, then
-          down without releasing. You can also use touch, or focus the dojo and
-          use the arrow keys while holding Space. Press R to restart.
+          In Flow cuts, hold and drag right through the horizontal guide, then
+          cut down the vertical guide. You can release between cuts to
+          reposition. In Precise trace, follow the guide continuously without
+          releasing. You can also use touch, or focus the dojo and use the arrow
+          keys while holding Space. Press R to restart.
         </p>
         <h3>In Meta Quest</h3>
         <p>
           Open this page over HTTPS in Quest Browser, then select Enter VR. Stay
           in place. Hold either controller’s trigger and move the sword tip
-          along the guide. Release to retry. After completing, press the trigger
-          to practice again. Squeeze the grip to recenter the guide in front of
-          you.
+          across the guide with a controlled rightward slash, then a downward
+          cut. Flow cuts accepts natural arcs and preserves the first cut when
+          you release. Precise trace requires one continuous stroke. After
+          completing, press the trigger to practice again. Squeeze the grip to
+          recenter the guide in front of you.
+        </p>
+        <h3>Sound & atmosphere</h3>
+        <p>
+          An original plucked melody, low drums, and wind accompany your
+          practice. Sword swishes follow your swing speed and position;
+          successful cuts ring out. Music and effects can be muted separately.
         </p>
         <p className="help-note">
           Keep a clear arm’s-length area around you. Use the Quest system menu

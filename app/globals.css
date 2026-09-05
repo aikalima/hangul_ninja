@@ -838,3 +838,86 @@ footer > span:nth-child(2) {
   background: #080e10c9;
   backdrop-filter: blur(9px);
 }
+
+.practice-modes {
+  display: flex;
+  margin-top: 18px;
+  padding: 3px;
+  background: #151c1a;
+  border: 1px solid #465044;
+  border-radius: 6px;
+  gap: 3px;
+}
+.practice-modes button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #a9b5a5;
+  padding: 9px 4px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+.practice-modes button[aria-pressed='true'] {
+  background: #3b4533;
+  color: #f2dfb6;
+}
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #a7b0a7;
+}
+.volume-control input {
+  width: 72px;
+  accent-color: #edb375;
+}
+.audio-hint {
+  font-size: 12px;
+  color: #87968a;
+  margin: -9px 0 20px;
+}
+.lesson-panel .divider {
+  margin: 18px 0;
+}
+.dojo-layout,
+.viewport-shell {
+  min-height: 615px;
+}
+@media (max-width: 1000px) {
+  .underbar {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .audio-controls {
+    gap: 12px;
+  }
+}
+@media (max-width: 720px) {
+  .dojo-layout {
+    min-height: 0;
+  }
+  .viewport-shell {
+    min-height: 420px;
+  }
+  .audio-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .audio-hint {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .practice-modes button {
+    font-size: 14px;
+  }
+}

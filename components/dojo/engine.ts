@@ -1,6 +1,14 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { PATH, TraceLesson, type TraceState } from '@/lib/tracing';
+import {
+  PATH,
+  TraceLesson,
+  FlowLesson,
+  type PracticeMode,
+  type TraceState,
+} from '@/lib/tracing';
+import { DojoAudio } from './audio';
+import { createEffects } from './effects';
 
 export type DojoStatus = {
   progress: number;
@@ -12,6 +20,9 @@ export type DojoAPI = {
   demonstrate: () => void;
   enterVR: () => Promise<void>;
   setSound: (v: boolean) => void;
+  setMusic: (v: boolean) => void;
+  setVolume: (v: number) => void;
+  setMode: (mode: PracticeMode) => void;
   dispose: () => void;
 };
 
@@ -321,12 +332,13 @@ export function createDojo(
   arrow.texture.needsUpdate = true;
   arrow.sprite.position.set(-0.42, 0.59, 0.01);
   lessonRoot.add(arrow.sprite);
-  const lesson = new TraceLesson();
+  let mode: PracticeMode = 'flow';
+  let lesson: TraceLesson | FlowLesson = new FlowLesson();
+  const audio = new DojoAudio();
+  const effects = createEffects(scene, lessonRoot);
   let lastStatus = '',
     demoStart = 0,
-    disposed = false,
-    sound = false,
-    audio: AudioContext | null = null;
+    disposed = false;
   const keys = new Set<string>();
   let keyboardHeld = false,
     pointerHeld = false,
@@ -338,17 +350,24 @@ export function createDojo(
     const watching = demoStart > 0;
     const phase = watching ? 'watching' : lesson.state;
     const progress = watching ? 0 : lesson.progress;
-    const message = watching
-      ? 'Watch: right, then down.'
-      : phase === 'complete'
-        ? 'Beautiful. Your first Hangul stroke.'
-        : phase === 'retry'
-          ? 'Return to the circle and try again.'
-          : phase === 'tracing'
-            ? progress < 48
-              ? 'Move right toward the corner.'
-              : 'Turn downward. Keep holding.'
-            : 'Start at the glowing circle.';
+    const message =
+      mode === 'flow' && !watching
+        ? phase === 'complete'
+          ? 'Combo complete. Two cuts, one character.'
+          : progress >= 50
+            ? 'Slash landed! Now cut downward.'
+            : 'Sweep left to right through the guide.'
+        : watching
+          ? 'Watch: right, then down.'
+          : phase === 'complete'
+            ? 'Beautiful. Your first Hangul stroke.'
+            : phase === 'retry'
+              ? 'Return to the circle and try again.'
+              : phase === 'tracing'
+                ? progress < 48
+                  ? 'Move right toward the corner.'
+                  : 'Turn downward. Keep holding.'
+                : 'Start at the glowing circle.';
     const key = `${phase}:${progress}`;
     if (key === lastStatus) return;
     lastStatus = key;
@@ -365,8 +384,12 @@ export function createDojo(
       renderer.xr.isPresenting
         ? phase === 'complete'
           ? 'Press trigger to practice again'
-          : 'Hold trigger to trace · Squeeze grip to recenter'
-        : 'Hold & drag · Follow the light',
+          : mode === 'flow'
+            ? 'Hold trigger to cut · Release to recover · Grip: recenter'
+            : 'Hold trigger to trace · Squeeze grip to recenter'
+        : mode === 'flow'
+          ? 'Drag right, then down · Release between cuts if needed'
+          : 'Hold & drag · Follow the light',
       512,
       110,
     );
@@ -374,43 +397,39 @@ export function createDojo(
     c.fillText(watching ? 'DEMONSTRATION' : `${progress}%  COMPLETE`, 512, 153);
     feedback.texture.needsUpdate = true;
   }
-  function tone(completed = false) {
-    if (!sound) return;
-    audio ??= new AudioContext();
-    void audio.resume();
-    const osc = audio.createOscillator(),
-      gain = audio.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(completed ? 660 : 440, audio.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(
-      completed ? 880 : 330,
-      audio.currentTime + 0.18,
-    );
-    gain.gain.setValueAtTime(0.07, audio.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.45);
-    osc.connect(gain).connect(audio.destination);
-    osc.start();
-    osc.stop(audio.currentTime + 0.5);
-  }
+  const hitPosition = new THREE.Vector3();
   function sample(p: THREE.Vector3) {
-    const before = lesson.next;
+    const before = lesson.next,
+      previousState = lesson.state;
     lesson.sample(p);
-    if (
-      lesson.next !== before &&
-      (lesson.next === 21 || lesson.state === 'complete')
-    ) {
-      tone(lesson.state === 'complete');
+    const crossedCorner = before < 21 && lesson.next >= 21;
+    const complete =
+      previousState !== 'complete' && lesson.state === 'complete';
+    if (crossedCorner || complete) {
+      hitPosition.set(0.45, complete ? -0.45 : 0.45, 0);
+      lessonRoot.localToWorld(hitPosition);
+      audio.impact(hitPosition, complete);
+      effects.cut(hitPosition, complete);
       const source =
         activeController >= 0
           ? (controllers[activeController].userData.source as XRInputSource)
           : undefined;
-      source?.gamepad?.hapticActuators?.[0]?.pulse(0.35, 60).catch(() => {});
+      source?.gamepad?.hapticActuators?.[0]
+        ?.pulse(complete ? 0.65 : 0.4, complete ? 110 : 55)
+        .catch(() => {});
+    } else if (previousState === 'tracing' && lesson.state === 'retry') {
+      hitPosition.copy(p);
+      lessonRoot.localToWorld(hitPosition);
+      audio.impact(hitPosition, false, true);
     }
     report();
   }
   function reset() {
     demoStart = 0;
     lesson.reset();
+    effects.reset();
+    tipValid = false;
+    audio.unlock();
     trailCount = 0;
     cursor.set(-0.45, 0.45, 0.025);
     lastStatus = '';
@@ -471,8 +490,11 @@ export function createDojo(
       }
     });
     controller.addEventListener('selectstart', () => {
+      audio.unlock();
       if (activeController !== -1) return;
       activeController = i;
+      tipValid = false;
+      trailCount = 0;
       if (lesson.state === 'complete') reset();
       demoStart = 0;
     });
@@ -579,6 +601,7 @@ export function createDojo(
     }
   }
   function pointerDown(e: PointerEvent) {
+    audio.unlock();
     if (e.button !== 0 || renderer.xr.isPresenting) return;
     canvas.focus({ preventScroll: true });
     canvas.setPointerCapture(e.pointerId);
@@ -601,6 +624,7 @@ export function createDojo(
       e.preventDefault();
       keys.add(e.code);
       if (e.code === 'Space' && !keyboardHeld) {
+        audio.unlock();
         keyboardHeld = true;
         demoStart = 0;
         if (lesson.state === 'complete') reset();
@@ -624,6 +648,11 @@ export function createDojo(
     lesson.release();
     report();
   }
+  function visibilityChanged() {
+    audio.pause(document.hidden);
+    blur();
+  }
+  document.addEventListener('visibilitychange', visibilityChanged);
   canvas.addEventListener('pointermove', movePointer);
   canvas.addEventListener('pointerdown', pointerDown);
   canvas.addEventListener('pointerup', pointerUp);
@@ -663,6 +692,12 @@ export function createDojo(
         if (!disposed) onXR(v);
       })
       .catch(() => {});
+  const listenerPosition = new THREE.Vector3(),
+    listenerForward = new THREE.Vector3(),
+    listenerUp = new THREE.Vector3();
+  const previousTip = new THREE.Vector3();
+  let tipValid = false,
+    swordSpeed = 0;
   let lastFrame = 0,
     elapsed = 0;
   renderer.setAnimationLoop((time) => {
@@ -736,7 +771,30 @@ export function createDojo(
       baseWorld.set(0, 0, -0.24).applyMatrix4(desktopSword.matrixWorld);
       updateTrail(tipWorld, baseWorld, elapsed);
     }
-    const idx = Math.min(PATH.length - 1, lesson.next);
+    if (tipValid && dt > 0) {
+      const distance = previousTip.distanceTo(tipWorld);
+      swordSpeed = distance < 1.6 ? Math.min(12, distance / dt) : 0;
+      if (!demoStart) audio.swish(swordSpeed, tipWorld);
+    }
+    previousTip.copy(tipWorld);
+    tipValid = true;
+    const view = renderer.xr.isPresenting ? renderer.xr.getCamera() : camera;
+    view.getWorldPosition(listenerPosition);
+    view.getWorldDirection(listenerForward);
+    listenerUp.set(0, 1, 0).transformDirection(view.matrixWorld);
+    audio.listener(listenerPosition, listenerForward, listenerUp);
+    audio.tick(lesson.progress / 100);
+    effects.update(dt, elapsed, mode === 'flow', lesson.progress);
+    warm.intensity =
+      12 + Math.sin(elapsed * 1.6) * 0.6 + Math.min(swordSpeed, 5) * 0.2;
+    lanternMat.emissiveIntensity = 1.55 + Math.sin(elapsed * 2.1) * 0.1;
+    glowMat.opacity = 0.13 + Math.min(swordSpeed, 5) * 0.025;
+    (trail.material as THREE.MeshBasicMaterial).opacity =
+      0.45 + Math.min(swordSpeed, 5) * 0.07;
+    const idx =
+      mode === 'flow' && lesson.next === 21
+        ? 20
+        : Math.min(PATH.length - 1, lesson.next);
     target.position.set(PATH[idx].x, PATH[idx].y, 0.014);
     target.scale.setScalar(1 + Math.sin(elapsed * 4) * 0.15);
     target.visible = lesson.state !== 'complete';
@@ -752,12 +810,18 @@ export function createDojo(
   report();
   return {
     reset,
+    setMode(value) {
+      mode = value;
+      lesson = value === 'flow' ? new FlowLesson() : new TraceLesson();
+      reset();
+    },
     demonstrate() {
       reset();
       demoStart = Math.max(0.001, elapsed);
       report();
     },
     async enterVR() {
+      audio.unlock();
       if (!window.isSecureContext)
         throw new Error(
           'VR needs HTTPS. Open the hosted dojo in Meta Quest Browser.',
@@ -776,6 +840,14 @@ export function createDojo(
         });
         try {
           await renderer.xr.setSession(session);
+          session.addEventListener('visibilitychange', () => {
+            audio.pause(session.visibilityState !== 'visible');
+            if (session.visibilityState !== 'visible') {
+              lesson.release();
+              activeController = -1;
+              report();
+            }
+          });
         } catch (error) {
           await session.end();
           throw error;
@@ -787,21 +859,28 @@ export function createDojo(
       }
     },
     setSound(v) {
-      sound = v;
-      if (v) tone();
+      audio.setEffects(v);
+    },
+    setMusic(v) {
+      audio.setMusic(v);
+    },
+    setVolume(v) {
+      audio.setVolume(v);
     },
     dispose() {
       disposed = true;
       renderer.setAnimationLoop(null);
       resize.disconnect();
       void renderer.xr.getSession()?.end();
-      void audio?.close();
+      audio.dispose();
+      document.removeEventListener('visibilitychange', visibilityChanged);
       const geometries = new Set<THREE.BufferGeometry>(),
         mats = new Set<THREE.Material>();
       scene.traverse((o) => {
         if (
           o instanceof THREE.Mesh ||
           o instanceof THREE.Line ||
+          o instanceof THREE.Points ||
           o instanceof THREE.Sprite
         ) {
           if ('geometry' in o) geometries.add(o.geometry);
