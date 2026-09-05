@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { readProgress } from '@/lib/progress';
 import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
@@ -31,8 +32,7 @@ export default function Home() {
     'closed' | 'welcome' | 'watching' | 'ready'
   >('closed');
   useEffect(() => {
-    // Mobile visitors enter the dojo directly; the first touch starts training.
-    if (window.matchMedia('(max-width: 720px)').matches) return;
+    if (readProgress()) return;
     try {
       if (localStorage.getItem('hangul-ninja-welcome-v1') === 'done') return;
     } catch {
@@ -42,7 +42,8 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => {
-    if (onboarding === 'closed') welcomeDialog.current?.close();
+    if (onboarding === 'closed' || onboarding === 'watching')
+      welcomeDialog.current?.close();
     else if (!welcomeDialog.current?.open) welcomeDialog.current?.showModal();
   }, [onboarding]);
   const host = useRef<HTMLDivElement>(null);
@@ -129,7 +130,7 @@ export default function Home() {
     <main>
       <dialog
         ref={welcomeDialog}
-        className={`welcome-dialog ${onboarding === 'watching' ? 'is-watching' : ''}`}
+        className="welcome-dialog"
         aria-labelledby="welcome-title"
         onCancel={(e) => {
           e.preventDefault();
@@ -243,7 +244,7 @@ export default function Home() {
             </div>
             <div className="scene-bottom">
               <span>
-                <MousePointer2 size={16} /> Follow the numbered cuts
+                <MousePointer2 size={16} /> Drag the grip; trace with the tip
               </span>
               <div>
                 <button
@@ -593,7 +594,7 @@ export default function Home() {
         <h2 id="help-title">One stroke at a time.</h2>
         <h3>On desktop</h3>
         <p>
-          Begin a level, then hold and drag along each numbered cut in order.
+          Begin a level, then drag the katana by its grip. Guide the blade tip along each numbered cut in order.
           Release between cuts to reposition. Curves and corners use separate
           game cuts, rather than handwriting stroke counts. Completed cuts stay
           lit. Use arrow keys while holding Space for keyboard practice. Press R

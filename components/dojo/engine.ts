@@ -1,7 +1,8 @@
+import { readProgress, writeProgress, progressCheckpoint } from '@/lib/progress';
 import { MASTER_WELCOME, VOICE_LINES } from '@/lib/voice-lines';
 import * as THREE from 'three';
 import { buildEnvironment } from './environment';
-import { createKatana, KATANA_TIP, KATANA_TRAIL_INNER } from './katana';
+import { createKatana, KATANA_TIP, KATANA_TRAIL_INNER, DESKTOP_SWORD_OFFSET, DESKTOP_TIP_OFFSET, tipFromGrip } from './katana';
 import type { TraceState } from '@/lib/tracing';
 import { LEVELS, VowelLesson } from '@/lib/levels';
 import { CURRICULUM, cutDirection, followingLevel } from '@/lib/curriculum';
@@ -133,13 +134,14 @@ export function createDojo(
     return m;
   }
   const review = new TimedReview();
-  let levelIndex = 0;
-  let characters = CURRICULUM[0];
-  let characterIndex = 0;
+  const savedProgress = readProgress();
+  let levelIndex = savedProgress?.levelIndex ?? 0;
+  let characters = CURRICULUM[levelIndex];
+  let characterIndex = savedProgress?.characterIndex ?? 0;
   let nextLevelConfirmed = false;
   let nextCharacterAt = Infinity;
-  let stage: NonNullable<DojoStatus['stage']> = 'intro';
-  let PATH = characters[0].cuts.flat();
+  let stage: NonNullable<DojoStatus['stage']> = savedProgress ? 'active' : 'intro';
+  let PATH = characters[characterIndex].cuts.flat();
   const guideRoot = new THREE.Group();
   lessonRoot.add(guideRoot);
   const guideSegments: THREE.Mesh[] = [];
@@ -238,7 +240,15 @@ export function createDojo(
   arrow.texture.needsUpdate = true;
   arrow.sprite.position.set(-0.42, 0.59, 0.01);
   lessonRoot.add(arrow.sprite);
-  const lesson = new VowelLesson(characters[0].cuts);
+  const lesson = new VowelLesson(characters[characterIndex].cuts);
+  if (savedProgress) {
+    lesson.completedCuts = savedProgress.completedCuts;
+    lesson.next = savedProgress.completedCuts * 21;
+    lesson.state = lesson.completedCuts === lesson.cuts.length
+      ? 'complete' : lesson.completedCuts ? 'tracing' : 'ready';
+    if (lesson.state === 'complete') stage = 'level-complete';
+  }
+  let lastSavedProgress = '';
   const audio = new DojoAudio();
   const effects = createEffects(scene, lessonRoot);
   const celebration = createCelebration(
@@ -268,7 +278,7 @@ export function createDojo(
     },
     (active) => audio.duck(active),
   );
-  voice.setCharacter(characters[0]);
+  voice.setCharacter(characters[characterIndex]);
   let gestureStart = 0,
     gestureDistance = 0,
     gesturePrevious: THREE.Vector3 | null = null;
@@ -301,6 +311,14 @@ export function createDojo(
   const cursor = new THREE.Vector3(-0.45, 0.45, 0.025);
   const worldCursor = new THREE.Vector3();
   function report() {
+    if (stage !== 'intro' && !stage.startsWith('review-') && !demoStart) {
+      const checkpoint = progressCheckpoint(levelIndex, characterIndex, lesson.completedCuts);
+      const encoded = JSON.stringify(checkpoint);
+      if (encoded !== lastSavedProgress) {
+        writeProgress(checkpoint);
+        lastSavedProgress = encoded;
+      }
+    }
     const watching = demoStart > 0;
     const phase = watching ? 'watching' : lesson.state;
     const progress = watching ? 0 : lesson.progress;
@@ -564,7 +582,7 @@ export function createDojo(
       lesson.cuts = characters[0].cuts;
       PATH = characters[0].cuts.flat();
       rebuildGuide();
-      voice.setCharacter(characters[0]);
+      voice.setCharacter(characters[characterIndex]);
     }
     if (stage.startsWith('review-')) {
       review.state = 'ready';
@@ -640,7 +658,7 @@ export function createDojo(
       lesson.cuts = characters[0].cuts;
       PATH = characters[0].cuts.flat();
       rebuildGuide();
-      voice.setCharacter(characters[0]);
+      voice.setCharacter(characters[characterIndex]);
       pointerHeld = false;
       keyboardHeld = false;
       activeController = -1;
@@ -767,9 +785,7 @@ export function createDojo(
     time: 0,
   }));
   let trailCount = 0;
-  const swordOffset = new THREE.Vector3(0.22, -0.27, 0.84)
-    .normalize()
-    .multiplyScalar(0.9);
+  const swordOffset = DESKTOP_SWORD_OFFSET;
   const tipWorld = new THREE.Vector3(),
     trailInnerWorld = new THREE.Vector3(),
     localTip = new THREE.Vector3(),
@@ -826,8 +842,13 @@ export function createDojo(
       (-(e.clientY - r.top) / r.height) * 2 + 1,
     );
     raycaster.setFromCamera(ndc, camera);
-    plane.setFromNormalAndCoplanarPoint(normal, lessonRoot.position);
+    // Intersect at grip depth so the handle projects exactly under the touch.
+    // The physical blade tip remains on the lesson's tracing plane.
+    temp.copy(lessonRoot.position);
+    temp.z += 0.025 - DESKTOP_TIP_OFFSET.z;
+    plane.setFromNormalAndCoplanarPoint(normal, temp);
     if (raycaster.ray.intersectPlane(plane, temp)) {
+      tipFromGrip(temp, temp);
       cursor.copy(lessonRoot.worldToLocal(temp));
       cursor.z = 0.025;
       if (pointerHeld && !demoStart) sample(cursor);

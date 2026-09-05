@@ -1151,21 +1151,6 @@ footer > span:nth-child(2) {
   display: grid;
   gap: 10px;
 }
-.welcome-dialog.is-watching {
-  top: auto;
-  bottom: 20px;
-  padding: 18px 24px;
-}
-.welcome-dialog.is-watching::backdrop {
-  background: transparent;
-}
-.welcome-dialog.is-watching h2 {
-  font-size: 22px;
-}
-.welcome-dialog.is-watching p {
-  margin-bottom: 12px;
-}
-
 .scene-bottom .fullscreen-dojo-button {
   display: inline-flex;
   align-items: center;

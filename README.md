@@ -125,7 +125,7 @@ If deployment reports an IAM error, have your project administrator check the de
 ## Play on desktop
 
 1. Select **Begin Level 1**.
-2. Hold the mouse button and drag the katana tip through the numbered cuts in order.
+2. Hold the mouse button or touch and drag to hold the katana at its grip. Guide the offset blade tip through the numbered cuts in order.
 3. Release between cuts to reposition. Completed cuts remain lit; an unfinished cut restarts when released.
 4. Use **Watch this character** for a demonstration or **Hear** to replay pronunciation.
 
@@ -219,6 +219,6 @@ The application uses React, TypeScript, Three.js, WebXR, Web Audio, and Vinext/V
 
 ## Prototype limitations
 
-Progress is held in the current session and resets on reload. There are no saved profiles or scores. Timed interim reviews are currently disabled, although their implementation and tests remain in the repository.
+Progress is saved in a cookie for one year on this browser and site. Repeat visits resume the current level, character, and completed cuts; unfinished cuts restart. Level completion waits for confirmation before advancing. Clearing cookies clears saved progress. There are no saved profiles or scores. Timed interim reviews are currently disabled, although their implementation and tests remain in the repository.
 
 Automated tests cover recognition, curriculum data, audio assets, and playback logic. Physical Quest testing is still required to verify controller reach and orientation, audio playback, comfort, and sustained frame rate.
