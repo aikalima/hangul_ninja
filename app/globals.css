@@ -1027,13 +1027,13 @@ footer > span:nth-child(2) {
   transform: translateY(-50%);
 }
 .master-subtitle:has([data-master-gesture] canvas:not([hidden])) {
-  padding-right: 80px;
-  min-height: 80px;
+  padding-right: 92px;
+  min-height: 88px;
 }
 [data-master-gesture] canvas {
   display: block;
-  width: 64px;
-  height: 64px;
+  width: 76px;
+  height: 76px;
 }
 [data-master-gesture] canvas[hidden] {
   display: none;

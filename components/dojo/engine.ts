@@ -283,8 +283,10 @@ export function createDojo(
       (stage === 'active' || stage === 'review-active') &&
       gestureDistance >= 0.18 &&
       lesson.completedCuts === gestureStart
-    )
+    ) {
+      celebration.reset();
       voice.mistake();
+    }
     gestureDistance = 0;
     gesturePrevious = null;
     lesson.release();
@@ -327,7 +329,7 @@ export function createDojo(
     const timer = stage.startsWith('review-')
       ? review.remaining(performance.now()).toFixed(1)
       : '';
-    const key = `${stage}:${levelIndex}:${characterIndex}:${phase}:${progress}:${timer}:${review.seconds}`;
+    const key = `${stage}:${levelIndex}:${characterIndex}:${phase}:${progress}:${timer}:${review.seconds}:${celebration.active}`;
     if (key === lastStatus) return;
     lastStatus = key;
     onStatus({
@@ -450,10 +452,7 @@ export function createDojo(
     const sub = subtitle.ctx;
     sub.clearRect(0, 0, 1024, 224);
     if (masterLine) {
-      const hasGesture =
-        masterLine.id === 'success' ||
-        masterLine.id === 'sound-success' ||
-        masterLine.id.startsWith('praise-');
+      const hasGesture = celebration.active;
       const textCenter = hasGesture ? 450 : 512;
       sub.fillStyle = '#141a17ee';
       sub.fillRect(0, 0, 1024, 224);
@@ -552,6 +551,7 @@ export function createDojo(
       hitPosition.copy(p);
       lessonRoot.localToWorld(hitPosition);
       audio.impact(hitPosition, false, true);
+      celebration.reset();
       voice.mistake();
     }
     report();
@@ -578,7 +578,6 @@ export function createDojo(
     stage = 'active';
     lesson.reset();
     effects.reset();
-    celebration.reset();
     tipValid = false;
     audio.unlock();
     voice.beginCharacter();
@@ -600,7 +599,6 @@ export function createDojo(
     rebuildGuide();
     lesson.reset();
     effects.reset();
-    celebration.reset();
     pointerHeld = false;
     keyboardHeld = false;
     activeController = -1;
@@ -1068,13 +1066,7 @@ export function createDojo(
     audio.listener(listenerPosition, listenerForward, listenerUp);
     audio.tick(lesson.progress / 100);
     effects.update(dt, elapsed, false, lesson.progress);
-    celebration.update(
-      dt,
-      renderer.xr.isPresenting,
-      masterLine?.id === 'success' ||
-        masterLine?.id === 'sound-success' ||
-        !!masterLine?.id.startsWith('praise-'),
-    );
+    celebration.update(dt, renderer.xr.isPresenting);
     warm.intensity =
       9 + Math.sin(elapsed * 1.6) * 0.6 + Math.min(swordSpeed, 5) * 0.2;
     lanternMat.emissiveIntensity = 0.8 + Math.sin(elapsed * 2.1) * 0.1;

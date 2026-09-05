@@ -26,7 +26,8 @@ export function createCelebration(root: THREE.Group, slot: HTMLElement | null) {
   sprite.position.set(0, 0.92, 0.055);
   sprite.visible = false;
   root.add(sprite);
-  let age = 4;
+  let age = 0;
+  let active = false;
   let next = 0;
   let style = 0;
   const skin = '#ffd2b1';
@@ -483,32 +484,36 @@ export function createCelebration(root: THREE.Group, slot: HTMLElement | null) {
     texture.needsUpdate = true;
   }
   return {
+    get active() {
+      return active;
+    },
     play() {
       style = next;
       next = (next + 1) % STYLES.length;
       age = 0;
+      active = true;
       canvas.hidden = false;
     },
     reset() {
-      age = 4;
+      active = false;
       sprite.visible = false;
       canvas.hidden = true;
     },
     position(x: number, y: number) {
       sprite.position.set(x, y, 0.055);
     },
-    update(dt: number, vr: boolean, active: boolean) {
-      age += dt;
-      const visible = age < 2 && active;
+    update(dt: number, vr: boolean) {
+      const animate = age < 2;
+      age = Math.min(2, age + dt);
+      const visible = active;
       sprite.visible = visible && vr;
       canvas.hidden = !visible || vr;
       if (!visible) return;
       const enter = Math.min(1, age / 0.2);
-      const exit = Math.max(0, (age - 1.6) / 0.4);
-      sprite.scale.setScalar(0.28);
-      material.opacity = enter * (1 - exit);
+      sprite.scale.setScalar(0.33);
+      material.opacity = enter;
       canvas.style.opacity = String(material.opacity);
-      draw(age);
+      if (animate) draw(age);
     },
     dispose() {
       canvas.remove();
