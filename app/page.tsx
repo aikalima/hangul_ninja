@@ -94,7 +94,7 @@ export default function Home() {
             </h1>
           </div>
           <div className="prototype">
-            <span /> WEBXR PROTOTYPE <b>v0.5</b>
+            <span /> WEBXR PROTOTYPE <b>v0.6</b>
           </div>
         </div>
         <div className="dojo-layout">
@@ -418,7 +418,7 @@ export default function Home() {
           <div>
             <h3>Step inside the dojo</h3>
             <p>
-              Pick up your sword in Meta Quest Browser. Your space, your pace.
+              Pick up your katana in Meta Quest Browser. Your space, your pace.
             </p>
           </div>
           <button

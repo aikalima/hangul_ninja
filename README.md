@@ -1,6 +1,6 @@
 # Hangul Ninja
 
-WebXR prototype v0.5: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the default: a rightward slash, then a downward cut. Precise trace retains the continuous tracing lesson.
+WebXR prototype v0.6: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the default: a rightward slash, then a downward cut. Precise trace retains the continuous tracing lesson.
 
 ## Run locally
 
@@ -61,3 +61,9 @@ Visual research used the supplied Google query and matching image results for an
 Bundled PCM WAV voice clips pronounce 기역 when practice starts and 잘했다. 기역! after completion. Three stern Korean corrections rotate after failed gestures, with a 4.5-second cooldown. Valid recovery between landed flow cuts, tiny clicks, tracking loss, and visibility changes do not trigger scolding. English/Korean captions render in both the sidebar and XR scene. Use Hear ㄱ to replay pronunciation, Master to mute narration, and Volume for the master level. Music ducks while a voice clip plays.
 
 Clips were synthesized locally with the installed Korean Yuna voice. No browser Korean voice installation or runtime speech service is required. Playback starts on a practice interaction, consistent with browser autoplay restrictions; a blocked or failed playback shows a replay hint. Voice playback pauses on hidden sessions and is cleaned up on disposal. Tests validate cue decisions and WAV assets; listening quality and immersive playback still need Quest validation.
+
+## Katana and arm refinement
+
+The weapon is a curved, tapered katana with a diamond-section blade, subtle temper line, oval iron guard, brass fittings, and diamond-pattern handle wrap. Shared blade-tip landmarks drive both scoring and the 6 cm tip-only trail. Desktop placement compensates for the curve, keeping the actual rendered tip on the pointer's tracing position.
+
+Hands use rounded palms, curved finger segments, knuckles, and a wrapping thumb. Sleeves have shaped profiles; wrist guards are open plates. Elbows use a two-segment bend with a stable outward/downward pole while preserving controller hand positions. Arm lengths still adapt to uncalibrated reach; this remains a cosmetic estimated avatar, requiring headset clipping/comfort checks.

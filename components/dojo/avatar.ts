@@ -73,27 +73,49 @@ export function createAvatar(scene: THREE.Scene) {
   const arms = [-1, 1].map((side) => {
     const hand = new THREE.Group();
     root.add(hand);
-    box(hand, 0.057, 0.065, 0.105, glove, side * 0.03, 0, -0.045);
-    for (let i = 0; i < 4; i++)
-      piece(
-        hand,
-        new THREE.TorusGeometry(0.025, 0.009, 6, 10),
-        glove,
-        0,
-        0,
-        -0.088 + i * 0.024,
-      );
-    const thumb = box(
+    const palm = piece(
       hand,
-      0.025,
-      0.028,
-      0.06,
+      new THREE.SphereGeometry(1, 16, 12),
       glove,
-      -side * 0.025,
-      0.024,
-      -0.028,
+      side * 0.029,
+      0.004,
+      -0.04,
     );
-    thumb.rotation.y = side * 0.45;
+    palm.scale.set(0.03, 0.034, 0.064);
+    for (let i = 0; i < 4; i++) {
+      const z = -0.09 + i * 0.025;
+      const path = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(side * 0.047, 0.018, z),
+        new THREE.Vector3(side * 0.04, -0.02, z),
+        new THREE.Vector3(side * 0.012, -0.033, z),
+        new THREE.Vector3(-side * 0.023, -0.012, z),
+      ]);
+      piece(hand, new THREE.TubeGeometry(path, 12, 0.009, 8, false), glove);
+      const knuckle = piece(
+        hand,
+        new THREE.SphereGeometry(0.01, 10, 8),
+        glove,
+        side * 0.04,
+        -0.019,
+        z,
+      );
+      knuckle.scale.y = 0.8;
+    }
+    piece(
+      hand,
+      new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3([
+          new THREE.Vector3(side * 0.046, 0.027, 0.004),
+          new THREE.Vector3(side * 0.014, 0.038, -0.028),
+          new THREE.Vector3(-side * 0.018, 0.019, -0.055),
+        ]),
+        12,
+        0.012,
+        8,
+        false,
+      ),
+      glove,
+    );
     piece(
       hand,
       new THREE.CylinderGeometry(0.043, 0.048, 0.065, 10),
@@ -103,22 +125,37 @@ export function createAvatar(scene: THREE.Scene) {
       0.049,
     ).rotation.x = Math.PI / 2;
     box(hand, 0.057, 0.012, 0.075, metal, side * 0.012, 0.042, -0.015);
+    const profile = (radii: number[]) =>
+      new THREE.LatheGeometry(
+        radii.map((r, i) => new THREE.Vector2(r, i / (radii.length - 1) - 0.5)),
+        20,
+      );
     const upper = piece(
       root,
-      new THREE.CylinderGeometry(0.095, 0.115, 1, 10),
+      profile([0.079, 0.087, 0.084, 0.086, 0.075, 0.062, 0.06, 0.052]),
       cloth,
     );
     const fore = piece(
       root,
-      new THREE.CylinderGeometry(0.055, 0.085, 1, 10),
+      profile([0.054, 0.067, 0.068, 0.064, 0.06, 0.052, 0.047, 0.04]),
       cloth,
     );
+    const joint = piece(root, new THREE.SphereGeometry(0.057, 16, 12), cloth);
     const bracer = piece(
       root,
-      new THREE.CylinderGeometry(0.061, 0.068, 1, 10),
+      new THREE.CylinderGeometry(
+        0.043,
+        0.055,
+        1,
+        16,
+        1,
+        true,
+        -Math.PI * 0.42,
+        Math.PI * 0.84,
+      ),
       metal,
     );
-    return { hand, upper, fore, bracer, side };
+    return { hand, upper, fore, bracer, joint, side };
   });
   const up = new THREE.Vector3(0, 1, 0),
     position = new THREE.Vector3(),
@@ -127,7 +164,9 @@ export function createAvatar(scene: THREE.Scene) {
     wrist = new THREE.Vector3(),
     elbow = new THREE.Vector3(),
     delta = new THREE.Vector3(),
-    mid = new THREE.Vector3();
+    mid = new THREE.Vector3(),
+    axis = new THREE.Vector3(),
+    pole = new THREE.Vector3();
   let enabled = true,
     yaw = 0,
     width = 0.082;
@@ -183,6 +222,7 @@ export function createAvatar(scene: THREE.Scene) {
         arm.hand.visible =
           arm.upper.visible =
           arm.fore.visible =
+          arm.joint.visible =
           arm.bracer.visible =
             visible;
         if (!visible) continue;
@@ -205,12 +245,41 @@ export function createAvatar(scene: THREE.Scene) {
           .applyQuaternion(arm.hand.quaternion)
           .add(arm.hand.position);
         shoulder
-          .set(arm.side * 0.22, 0.17, 0.02)
+          .set(arm.side * 0.21, 0.34, 0.02)
           .applyMatrix4(body.matrixWorld);
-        elbow.copy(shoulder).lerp(wrist, 0.54);
-        elbow.y -= 0.17;
-        elbow.x += Math.cos(yaw) * arm.side * 0.1;
-        elbow.z -= Math.sin(yaw) * arm.side * 0.1;
+        axis.subVectors(wrist, shoulder);
+        const distance = Math.max(0.01, axis.length());
+        axis.normalize();
+        // Two-segment elbow bend with a stable outward/downward pole.
+        // Accommodate uncalibrated users without moving their tracked hands.
+        const reachScale = Math.max(1, distance / 0.64),
+          upperLength = 0.34 * reachScale,
+          foreLength = 0.31 * reachScale;
+        const along = THREE.MathUtils.clamp(
+          (upperLength * upperLength -
+            foreLength * foreLength +
+            distance * distance) /
+            (2 * distance),
+          0,
+          upperLength,
+        );
+        const bend = Math.sqrt(
+          Math.max(0, upperLength * upperLength - along * along),
+        );
+        pole.set(
+          Math.cos(yaw) * arm.side * 0.45,
+          -1,
+          -Math.sin(yaw) * arm.side * 0.45,
+        );
+        pole.addScaledVector(axis, -pole.dot(axis));
+        if (pole.lengthSq() < 0.001) pole.set(Math.cos(yaw), 0, -Math.sin(yaw));
+        pole.normalize();
+        elbow
+          .copy(shoulder)
+          .addScaledVector(axis, along)
+          .addScaledVector(pole, bend);
+        arm.joint.position.copy(elbow);
+        arm.joint.scale.setScalar(width / 0.082);
         bridge(arm.upper, shoulder, elbow, width / 0.095);
         bridge(arm.fore, elbow, wrist, width / 0.085);
         mid.copy(elbow).lerp(wrist, 0.62);

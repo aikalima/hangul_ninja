@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { buildEnvironment } from './environment';
 import { createAvatar } from './avatar';
+import { createKatana, KATANA_TIP, KATANA_TRAIL_INNER } from './katana';
 import type { FighterId } from '@/lib/fighters';
 import {
   PATH,
@@ -67,22 +68,6 @@ export function createDojo(
   host.appendChild(canvas);
   const environment = buildEnvironment(scene, renderer);
   const { warm, lanternMat } = environment;
-  const materials = { wood: environment.dark, edge: environment.wood };
-  function box(
-    w: number,
-    h: number,
-    d: number,
-    x: number,
-    y: number,
-    z: number,
-    mat: THREE.Material,
-    parent: THREE.Object3D,
-  ) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-    mesh.position.set(x, y, z);
-    parent.add(mesh);
-    return mesh;
-  }
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(0.72, 0.728, 80),
     new THREE.MeshBasicMaterial({
@@ -351,36 +336,7 @@ export function createDojo(
     report();
     if (!renderer.xr.isPresenting) canvas.focus({ preventScroll: true });
   }
-  function sword() {
-    const group = new THREE.Group();
-    const bladeMat = new THREE.MeshStandardMaterial({
-      color: '#ecedde',
-      metalness: 0.75,
-      roughness: 0.25,
-      emissive: '#c5c3ab',
-      emissiveIntensity: 0.25,
-    });
-    box(0.024, 0.035, 0.65, 0, 0, -0.47, bladeMat, group);
-    box(0.033, 0.025, 0.18, 0, 0, -0.06, materials.wood, group);
-    box(0.16, 0.025, 0.06, 0, 0, -0.145, materials.edge, group);
-    for (let i = 0; i < 5; i++)
-      box(0.037, 0.03, 0.012, 0, 0, -i * 0.026, materials.edge, group);
-    const tip = new THREE.Mesh(
-      new THREE.ConeGeometry(0.017, 0.11, 4),
-      bladeMat,
-    );
-    tip.rotation.x = -Math.PI / 2;
-    tip.position.z = -0.845;
-    group.add(tip);
-    const edge = new THREE.Mesh(
-      new THREE.BoxGeometry(0.007, 0.042, 0.68),
-      completeMat,
-    );
-    edge.position.set(0.015, 0, -0.49);
-    group.add(edge);
-    return group;
-  }
-  const desktopSword = sword();
+  const desktopSword = createKatana();
   scene.add(desktopSword);
   const avatar = createAvatar(scene);
   const controllers = [
@@ -393,7 +349,7 @@ export function createDojo(
   ];
   controllers.forEach((controller, i) => {
     scene.add(controller, grips[i]);
-    grips[i].add(sword());
+    grips[i].add(createKatana());
     controller.addEventListener('connected', (e) => {
       controller.userData.source = e.data;
     });
@@ -482,16 +438,26 @@ export function createDojo(
     let offset = 0;
     for (let i = 0; i < trailCount - 1; i++) {
       const a = history[i],
-        b = history[i + 1],
-        fade = Math.max(0, 1 - (time - b.time) / 0.32);
+        b = history[i + 1];
       const points = [a.tip, a.base, b.tip, a.base, b.base, b.tip];
       for (const p of points) {
-        trailPositions[offset] = p.x;
-        trailColors[offset++] = fade;
-        trailPositions[offset] = p.y;
-        trailColors[offset++] = fade * 0.57;
-        trailPositions[offset] = p.z;
-        trailColors[offset++] = fade * 0.18;
+        const sample = p === a.tip || p === a.base ? a : b;
+        const life = Math.max(0, 1 - (time - sample.time) / 0.25);
+        const inner = p === sample.base;
+        const brightness = life * life;
+        // Thin the tail as it fades, retaining the physical curved-tip trajectory.
+        trailPositions[offset] = inner
+          ? THREE.MathUtils.lerp(sample.tip.x, p.x, life)
+          : p.x;
+        trailColors[offset++] = brightness;
+        trailPositions[offset] = inner
+          ? THREE.MathUtils.lerp(sample.tip.y, p.y, life)
+          : p.y;
+        trailColors[offset++] = brightness * 0.57;
+        trailPositions[offset] = inner
+          ? THREE.MathUtils.lerp(sample.tip.z, p.z, life)
+          : p.z;
+        trailColors[offset++] = brightness * 0.18;
       }
     }
     trailGeometry.setDrawRange(0, offset / 3);
@@ -670,8 +636,10 @@ export function createDojo(
             );
       const index = i >= 0 ? i : 0;
       grips[index].updateWorldMatrix(true, false);
-      tipWorld.set(0, 0, -0.9).applyMatrix4(grips[index].matrixWorld);
-      trailInnerWorld.set(0, 0, -0.84).applyMatrix4(grips[index].matrixWorld);
+      tipWorld.copy(KATANA_TIP).applyMatrix4(grips[index].matrixWorld);
+      trailInnerWorld
+        .copy(KATANA_TRAIL_INNER)
+        .applyMatrix4(grips[index].matrixWorld);
       if (controllers[index].userData.source) {
         updateTrail(tipWorld, trailInnerWorld, elapsed);
         if (activeController >= 0) {
@@ -687,8 +655,14 @@ export function createDojo(
       desktopSword.lookAt(worldCursor);
       desktopSword.rotateY(Math.PI);
       desktopSword.updateWorldMatrix(true, false);
-      tipWorld.set(0, 0, -0.9).applyMatrix4(desktopSword.matrixWorld);
-      trailInnerWorld.set(0, 0, -0.84).applyMatrix4(desktopSword.matrixWorld);
+      // Correct the grip position for the curved tip's lateral offset.
+      temp.copy(KATANA_TIP).applyMatrix4(desktopSword.matrixWorld);
+      desktopSword.position.add(temp.sub(worldCursor).negate());
+      desktopSword.updateWorldMatrix(true, false);
+      tipWorld.copy(KATANA_TIP).applyMatrix4(desktopSword.matrixWorld);
+      trailInnerWorld
+        .copy(KATANA_TRAIL_INNER)
+        .applyMatrix4(desktopSword.matrixWorld);
       updateTrail(tipWorld, trailInnerWorld, elapsed);
     }
     if (tipValid && dt > 0) {
