@@ -465,9 +465,10 @@ export function createDojo(
     .normalize()
     .multiplyScalar(0.9);
   const tipWorld = new THREE.Vector3(),
-    baseWorld = new THREE.Vector3(),
+    trailInnerWorld = new THREE.Vector3(),
     localTip = new THREE.Vector3(),
     temp = new THREE.Vector3();
+  // Keep the ribbon on the final 6 cm of the blade, in both desktop and VR.
   function updateTrail(tip: THREE.Vector3, base: THREE.Vector3, time: number) {
     for (let i = Math.min(trailCount, trailLength); i > 0; i--) {
       history[i].tip.copy(history[i - 1].tip);
@@ -670,9 +671,9 @@ export function createDojo(
       const index = i >= 0 ? i : 0;
       grips[index].updateWorldMatrix(true, false);
       tipWorld.set(0, 0, -0.9).applyMatrix4(grips[index].matrixWorld);
-      baseWorld.set(0, 0, -0.22).applyMatrix4(grips[index].matrixWorld);
+      trailInnerWorld.set(0, 0, -0.84).applyMatrix4(grips[index].matrixWorld);
       if (controllers[index].userData.source) {
-        updateTrail(tipWorld, baseWorld, elapsed);
+        updateTrail(tipWorld, trailInnerWorld, elapsed);
         if (activeController >= 0) {
           localTip.copy(tipWorld);
           lessonRoot.worldToLocal(localTip);
@@ -687,8 +688,8 @@ export function createDojo(
       desktopSword.rotateY(Math.PI);
       desktopSword.updateWorldMatrix(true, false);
       tipWorld.set(0, 0, -0.9).applyMatrix4(desktopSword.matrixWorld);
-      baseWorld.set(0, 0, -0.24).applyMatrix4(desktopSword.matrixWorld);
-      updateTrail(tipWorld, baseWorld, elapsed);
+      trailInnerWorld.set(0, 0, -0.84).applyMatrix4(desktopSword.matrixWorld);
+      updateTrail(tipWorld, trailInnerWorld, elapsed);
     }
     if (tipValid && dt > 0) {
       const distance = previousTip.distanceTo(tipWorld);
