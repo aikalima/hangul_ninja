@@ -1,5 +1,7 @@
 # Hangul Ninja
 
+![Hangul Ninja dojo with a katana and glowing Hangul tracing guides](docs/images/hangul-ninja-dojo.png)
+
 Learn to recognize and draw Hangul through katana flow cuts in a stationary 3D dojo. Hangul Ninja is a browser-based WebXR prototype for Meta Quest Browser, with a desktop preview for playing and development without a headset.
 
 [Open the hosted game](https://hangul-ninja-dojo.markus318561.chatgpt.site/). The hosted site currently requires access from its owner; installing the source locally is a separate option.
