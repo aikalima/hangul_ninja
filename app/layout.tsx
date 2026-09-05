@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 export const metadata: Metadata = {
   title: 'Hangul Ninja — The Dojo',
+  icons: { icon: '/favicon.svg' },
   description:
     'Learn your first Hangul stroke in a lantern-lit WebXR dojo. Play on desktop or enter VR with Meta Quest.',
 };
