@@ -3,26 +3,10 @@ import * as THREE from 'three';
 // Shared physical landmarks keep tracing and the tip-only ribbon on the curved blade.
 export const KATANA_TIP = new THREE.Vector3(0.055, 0, -0.9);
 export const KATANA_TRAIL_INNER = new THREE.Vector3(0.046, 0, -0.84);
-// Hold the forward part of the grip, 5 cm toward the guard.
-export const KATANA_TOUCH_POINT = new THREE.Vector3(0, 0, -0.05);
 // Desktop pose points the blade up and left, away from the held grip.
 export const DESKTOP_SWORD_OFFSET = new THREE.Vector3(0.22, -0.27, 0.84)
   .normalize()
   .multiplyScalar(0.9);
-export const DESKTOP_TIP_OFFSET = KATANA_TIP.clone().sub(KATANA_TOUCH_POINT).applyQuaternion(
-  new THREE.Quaternion().setFromRotationMatrix(
-    new THREE.Matrix4().lookAt(
-      DESKTOP_SWORD_OFFSET,
-      new THREE.Vector3(),
-      new THREE.Vector3(0, 1, 0),
-    ),
-  ),
-);
-
-export function tipFromGrip(grip: THREE.Vector3, target: THREE.Vector3) {
-  return target.copy(grip).add(DESKTOP_TIP_OFFSET);
-}
-
 export function createKatana() {
   const group = new THREE.Group();
   const steel = new THREE.MeshStandardMaterial({

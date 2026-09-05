@@ -2,7 +2,7 @@ import { readProgress, writeProgress, progressCheckpoint } from '@/lib/progress'
 import { MASTER_WELCOME, VOICE_LINES } from '@/lib/voice-lines';
 import * as THREE from 'three';
 import { buildEnvironment } from './environment';
-import { createKatana, KATANA_TIP, KATANA_TRAIL_INNER, DESKTOP_SWORD_OFFSET, DESKTOP_TIP_OFFSET, tipFromGrip } from './katana';
+import { createKatana, KATANA_TIP, KATANA_TRAIL_INNER, DESKTOP_SWORD_OFFSET } from './katana';
 import type { TraceState } from '@/lib/tracing';
 import { LEVELS, VowelLesson } from '@/lib/levels';
 import { CURRICULUM, cutDirection, followingLevel } from '@/lib/curriculum';
@@ -842,13 +842,11 @@ export function createDojo(
       (-(e.clientY - r.top) / r.height) * 2 + 1,
     );
     raycaster.setFromCamera(ndc, camera);
-    // Intersect at grip depth so the handle projects exactly under the touch.
-    // The physical blade tip remains on the lesson's tracing plane.
+    // Keep the physical blade tip directly under the pointer.
     temp.copy(lessonRoot.position);
-    temp.z += 0.025 - DESKTOP_TIP_OFFSET.z;
+    temp.z += 0.025;
     plane.setFromNormalAndCoplanarPoint(normal, temp);
     if (raycaster.ray.intersectPlane(plane, temp)) {
-      tipFromGrip(temp, temp);
       cursor.copy(lessonRoot.worldToLocal(temp));
       cursor.z = 0.025;
       if (pointerHeld && !demoStart) sample(cursor);

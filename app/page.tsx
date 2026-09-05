@@ -244,7 +244,7 @@ export default function Home() {
             </div>
             <div className="scene-bottom">
               <span>
-                <MousePointer2 size={16} /> Drag the grip; trace with the tip
+                <MousePointer2 size={16} /> Drag the tip through the numbered cuts
               </span>
               <div>
                 <button
@@ -594,7 +594,7 @@ export default function Home() {
         <h2 id="help-title">One stroke at a time.</h2>
         <h3>On desktop</h3>
         <p>
-          Begin a level, then drag the katana by its grip. Guide the blade tip along each numbered cut in order.
+          Begin a level, then touch or click and drag the katana tip along each numbered cut in order.
           Release between cuts to reposition. Curves and corners use separate
           game cuts, rather than handwriting stroke counts. Completed cuts stay
           lit. Use arrow keys while holding Space for keyboard practice. Press R
