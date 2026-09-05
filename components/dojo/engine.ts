@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { buildEnvironment } from './environment';
 import {
   PATH,
   TraceLesson,
@@ -56,30 +56,10 @@ export function createDojo(
     'Trace the glowing Hangul guide. Drag, or hold Space and use arrow keys. R resets.',
   );
   host.appendChild(canvas);
-  scene.add(new THREE.HemisphereLight('#e1e0ba', '#3c3024', 2.1));
-  const sun = new THREE.DirectionalLight('#ffe5b2', 2.4);
-  sun.position.set(-4, 8, -5);
-  scene.add(sun);
-  const warm = new THREE.PointLight('#ffb267', 12, 12, 2);
-  warm.position.set(0, 3, 0);
-  scene.add(warm);
-  const architecture = new THREE.Group();
-  scene.add(architecture);
-  const materials = {
-    wood: new THREE.MeshStandardMaterial({ color: '#342b24', roughness: 0.95 }),
-    edge: new THREE.MeshStandardMaterial({ color: '#55412e', roughness: 0.9 }),
-    floor: new THREE.MeshStandardMaterial({ color: '#63513b', roughness: 1 }),
-    seam: new THREE.MeshStandardMaterial({ color: '#3b382a', roughness: 1 }),
-    paper: new THREE.MeshStandardMaterial({
-      color: '#d8c595',
-      roughness: 1,
-      emissive: '#c19952',
-      emissiveIntensity: 0.2,
-    }),
-    roof: new THREE.MeshStandardMaterial({ color: '#302e28', roughness: 1 }),
-    green: new THREE.MeshStandardMaterial({ color: '#687459', roughness: 1 }),
-  };
-  const box = (
+  const environment = buildEnvironment(scene, renderer);
+  const { warm, lanternMat } = environment;
+  const materials = { wood: environment.dark, edge: environment.wood };
+  function box(
     w: number,
     h: number,
     d: number,
@@ -87,122 +67,12 @@ export function createDojo(
     y: number,
     z: number,
     mat: THREE.Material,
-    parent: THREE.Object3D = architecture,
-  ) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-    m.position.set(x, y, z);
-    parent.add(m);
-    return m;
-  };
-  box(17, 0.15, 18, 0, -0.13, 0, materials.floor);
-  for (let z = -8; z < 9; z += 0.65) {
-    box(17, 0.008, 0.014, 0, -0.047, z, materials.seam);
-    for (let x = -8; x < 8; x += 2.8)
-      box(
-        0.013,
-        0.008,
-        0.63,
-        x + (Math.round(z / 0.65) % 2) * 1.4,
-        -0.047,
-        z + 0.32,
-        materials.seam,
-      );
-  }
-  // Open timber pavilion, paper lattice walls, and a distant garden.
-  for (const x of [-4.2, 4.2])
-    for (const z of [-5, -1, 3.2]) {
-      box(0.24, 4.6, 0.24, x, 2.2, z, materials.wood);
-      box(0.42, 0.2, 0.42, x, 0.04, z, materials.edge);
-      box(0.48, 0.18, 0.48, x, 3.77, z, materials.edge);
-    }
-  for (const z of [-5, -1, 3.2]) {
-    box(9.3, 0.3, 0.27, 0, 4.12, z, materials.wood);
-    box(8.8, 0.11, 0.4, 0, 3.85, z, materials.edge);
-  }
-  for (const x of [-4.2, 4.2]) box(0.3, 0.28, 9, x, 4.1, -0.9, materials.wood);
-  box(10, 0.18, 10, 0, 4.55, -1, materials.roof);
-  for (let x = -4.5; x <= 4.5; x += 0.65)
-    box(0.065, 0.23, 9.8, x, 4.34, -1, materials.edge);
-  for (const x of [-3.2, 3.2]) {
-    box(2.2, 3.7, 0.1, x, 1.8, -5, materials.paper);
-    for (let dx = -1; dx <= 1; dx += 0.36)
-      box(0.034, 3.7, 0.13, x + dx, 1.8, -4.92, materials.edge);
-    for (let y = 0.3; y < 3.8; y += 0.44)
-      box(2.2, 0.035, 0.13, x, y, -4.92, materials.edge);
-  }
-  box(2.4, 0.14, 0.22, 0, 3.52, -5, materials.wood);
-  for (const x of [-1.24, 1.24])
-    box(0.13, 3.6, 0.2, x, 1.75, -5, materials.wood);
-  box(35, 0.12, 23, 0, -0.28, -16, materials.green);
-  // Low-poly bamboo silhouettes through the open walls.
-  const bamboo = new THREE.MeshStandardMaterial({
-    color: '#4e624a',
-    roughness: 1,
-  });
-  for (let i = 0; i < 28; i++) {
-    const x = Math.sin(i * 7.3) * 11,
-      z = -7 - (i % 6) * 1.3,
-      h = 2.8 + (i % 5) * 0.48;
-    box(0.065, h, 0.065, x, h / 2 - 0.3, z, bamboo);
-    for (let j = 0; j < 3; j++) {
-      const leaf = box(
-        0.7,
-        0.025,
-        0.16,
-        x + (j % 2 ? 0.2 : -0.2),
-        h - 0.4 - j * 0.53,
-        z,
-        bamboo,
-      );
-      leaf.rotation.z = (j % 2 ? 1 : -1) * 0.5;
-    }
-  }
-  // Warm hanging lanterns flank the guide without post-processing bloom.
-  const lanternMat = new THREE.MeshStandardMaterial({
-    color: '#ffe4a6',
-    emissive: '#ffbd63',
-    emissiveIntensity: 1.6,
-    roughness: 1,
-  });
-  for (const x of [-2.65, 2.65])
-    for (const z of [-3.9, 1.8]) {
-      box(0.018, 0.5, 0.018, x, 3.65, z, materials.wood);
-      const lantern = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.22, 0.24, 0.48, 10),
-        lanternMat,
-      );
-      lantern.position.set(x, 3.15, z);
-      architecture.add(lantern);
-      box(0.49, 0.045, 0.49, x, 3.4, z, materials.wood);
-      box(0.49, 0.045, 0.49, x, 2.9, z, materials.wood);
-      for (let i = 0; i < 6; i++)
-        box(
-          0.024,
-          0.48,
-          0.024,
-          x + Math.cos((i * Math.PI) / 3) * 0.225,
-          3.15,
-          z + Math.sin((i * Math.PI) / 3) * 0.225,
-          materials.edge,
-        );
-    }
-  // Merge static geometry by material to keep Quest draw calls low.
-  const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
-  architecture.updateMatrixWorld(true);
-  architecture.traverse((o) => {
-    if (o instanceof THREE.Mesh) {
-      const mat = o.material as THREE.Material;
-      const list = batches.get(mat) || [];
-      list.push(o.geometry.clone().applyMatrix4(o.matrixWorld));
-      batches.set(mat, list);
-      o.geometry.dispose();
-    }
-  });
-  architecture.clear();
-  for (const [mat, geometries] of batches) {
-    const geometry = mergeGeometries(geometries, false);
-    if (geometry) architecture.add(new THREE.Mesh(geometry, mat));
-    geometries.forEach((g) => g.dispose());
+    parent: THREE.Object3D,
+  ) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.set(x, y, z);
+    parent.add(mesh);
+    return mesh;
   }
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(0.72, 0.728, 80),
@@ -214,7 +84,7 @@ export function createDojo(
     }),
   );
   ring.rotation.x = -Math.PI / 2;
-  ring.position.set(0, -0.035, 0.1);
+  ring.position.set(0, 0.036, 0.1);
   scene.add(ring);
   const outer = ring.clone();
   outer.scale.setScalar(1.09);
@@ -786,8 +656,8 @@ export function createDojo(
     audio.tick(lesson.progress / 100);
     effects.update(dt, elapsed, mode === 'flow', lesson.progress);
     warm.intensity =
-      12 + Math.sin(elapsed * 1.6) * 0.6 + Math.min(swordSpeed, 5) * 0.2;
-    lanternMat.emissiveIntensity = 1.55 + Math.sin(elapsed * 2.1) * 0.1;
+      9 + Math.sin(elapsed * 1.6) * 0.6 + Math.min(swordSpeed, 5) * 0.2;
+    lanternMat.emissiveIntensity = 0.8 + Math.sin(elapsed * 2.1) * 0.1;
     glowMat.opacity = 0.13 + Math.min(swordSpeed, 5) * 0.025;
     (trail.material as THREE.MeshBasicMaterial).opacity =
       0.45 + Math.min(swordSpeed, 5) * 0.07;
@@ -873,6 +743,7 @@ export function createDojo(
       resize.disconnect();
       void renderer.xr.getSession()?.end();
       audio.dispose();
+      environment.dispose();
       document.removeEventListener('visibilitychange', visibilityChanged);
       const geometries = new Set<THREE.BufferGeometry>(),
         mats = new Set<THREE.Material>();

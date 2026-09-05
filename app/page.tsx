@@ -90,7 +90,7 @@ export default function Home() {
             </h1>
           </div>
           <div className="prototype">
-            <span /> WEBXR PROTOTYPE <b>v0.2</b>
+            <span /> WEBXR PROTOTYPE <b>v0.3</b>
           </div>
         </div>
         <div className="dojo-layout">

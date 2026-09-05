@@ -1,6 +1,6 @@
 # Hangul Ninja
 
-WebXR prototype v0.2: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the default: a rightward slash, then a downward cut. Precise trace retains the continuous tracing lesson.
+WebXR prototype v0.3: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the default: a rightward slash, then a downward cut. Precise trace retains the continuous tracing lesson.
 
 ## Run locally
 
@@ -41,3 +41,9 @@ WebXR references: [Three.js WebXRManager](https://threejs.org/docs/pages/WebXRMa
 The soundtrack is an original Web Audio composition: a pentatonic plucked melody at 88 BPM, low drum pulses, and filtered wind. No music files, external streaming services, or copyrighted recordings are used. The soundtrack adds percussion as progress builds. HRTF-positioned swishes respond to sword-tip speed; cuts and completion have distinct musical impacts. One AudioContext is created on interaction, hidden sessions suspend it, and disposal closes it.
 
 Pooled sparks, drifting motes, split targets, lantern flicker, speed-responsive trails, and a completion ring make the scene react without moving or shaking the VR camera. Geometry remains bounded; device performance and listening quality still need a Quest playtest.
+
+## Reference-inspired room
+
+The dojo is now a complete 9.4 × 11 m timber room inspired by the supplied illustration: paired cylindrical columns and pegged crossbeam, upper lattice windows, thick framed shoji panels, ceiling boards, individually bound woven training mats, benches, practice-sword racks, scrolls, landscape panels, and a wooden training dummy. The reference is interpreted as full 3D geometry, not a background image.
+
+Seeded canvas textures provide timber grain, knots, woven fibers, and paper variation, with roughness and subtle bump mapping. Directional daylight casts window and structure shadows using a single static 2048px shadow map; environment geometry is merged by material and shadow behavior. Textures and the shadow map are released on scene cleanup. Physical Quest performance and the new lighting still need device validation.
