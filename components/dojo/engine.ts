@@ -10,18 +10,23 @@ import {
   type TraceState,
 } from '@/lib/tracing';
 import { DojoAudio } from './audio';
+import { MasterVoice } from './voice';
+import { isFailedGesture, type VoiceLine } from '@/lib/voice-lines';
 import { createEffects } from './effects';
 
 export type DojoStatus = {
   progress: number;
   phase: TraceState | 'watching';
   message: string;
+  master?: VoiceLine | null;
 };
 export type DojoAPI = {
   reset: () => void;
   demonstrate: () => void;
   enterVR: () => Promise<void>;
   setSound: (v: boolean) => void;
+  setVoice: (v: boolean) => void;
+  pronounce: () => void;
   setMusic: (v: boolean) => void;
   setVolume: (v: number) => void;
   setMode: (mode: PracticeMode) => void;
@@ -213,6 +218,33 @@ export function createDojo(
   let lastStatus = '',
     demoStart = 0,
     disposed = false;
+  let masterLine: VoiceLine | null = null;
+  const voice = new MasterVoice(
+    (line) => {
+      if (disposed) return;
+      masterLine = line;
+      lastStatus = '';
+      report();
+    },
+    (active) => audio.duck(active),
+  );
+  let gestureStart = 0,
+    gestureDistance = 0,
+    gesturePrevious: THREE.Vector3 | null = null;
+  function beginGesture() {
+    gestureStart = lesson.next;
+    gestureDistance = 0;
+    gesturePrevious = null;
+    voice.intro();
+  }
+  function endGesture() {
+    if (isFailedGesture(mode, gestureStart, lesson.next, gestureDistance))
+      voice.mistake();
+    gestureDistance = 0;
+    gesturePrevious = null;
+    lesson.release();
+    report();
+  }
   const keys = new Set<string>();
   let keyboardHeld = false,
     pointerHeld = false,
@@ -245,25 +277,26 @@ export function createDojo(
     const key = `${phase}:${progress}`;
     if (key === lastStatus) return;
     lastStatus = key;
-    onStatus({ phase, progress, message });
+    onStatus({ phase, progress, message, master: masterLine });
     const c = feedback.ctx;
     c.clearRect(0, 0, 1024, 192);
     c.textAlign = 'center';
     c.fillStyle = phase === 'complete' ? '#d4eab0' : '#f1dec0';
     c.font = '28px Arial';
-    c.fillText(message, 512, 65);
+    c.fillText(masterLine?.ko ?? message, 512, 65);
     c.fillStyle = '#c8cbbb';
     c.font = '21px Arial';
     c.fillText(
-      renderer.xr.isPresenting
-        ? phase === 'complete'
-          ? 'Press trigger to practice again'
+      masterLine?.en ??
+        (renderer.xr.isPresenting
+          ? phase === 'complete'
+            ? 'Press trigger to practice again'
+            : mode === 'flow'
+              ? 'Hold trigger to cut · Release to recover · Grip: recenter'
+              : 'Hold trigger to trace · Squeeze grip to recenter'
           : mode === 'flow'
-            ? 'Hold trigger to cut · Release to recover · Grip: recenter'
-            : 'Hold trigger to trace · Squeeze grip to recenter'
-        : mode === 'flow'
-          ? 'Drag right, then down · Release between cuts if needed'
-          : 'Hold & drag · Follow the light',
+            ? 'Drag right, then down · Release between cuts if needed'
+            : 'Hold & drag · Follow the light'),
       512,
       110,
     );
@@ -273,6 +306,9 @@ export function createDojo(
   }
   const hitPosition = new THREE.Vector3();
   function sample(p: THREE.Vector3) {
+    if (gesturePrevious)
+      gestureDistance += Math.min(0.5, gesturePrevious.distanceTo(p));
+    gesturePrevious = p.clone();
     const before = lesson.next,
       previousState = lesson.state;
     lesson.sample(p);
@@ -283,6 +319,7 @@ export function createDojo(
       hitPosition.set(0.45, complete ? -0.45 : 0.45, 0);
       lessonRoot.localToWorld(hitPosition);
       audio.impact(hitPosition, complete);
+      if (complete) voice.success();
       effects.cut(hitPosition, complete);
       const source =
         activeController >= 0
@@ -295,6 +332,7 @@ export function createDojo(
       hitPosition.copy(p);
       lessonRoot.localToWorld(hitPosition);
       audio.impact(hitPosition, false, true);
+      voice.mistake();
     }
     report();
   }
@@ -304,6 +342,9 @@ export function createDojo(
     effects.reset();
     tipValid = false;
     audio.unlock();
+    voice.intro(true);
+    gestureDistance = 0;
+    gesturePrevious = null;
     trailCount = 0;
     cursor.set(-0.45, 0.45, 0.025);
     lastStatus = '';
@@ -372,12 +413,12 @@ export function createDojo(
       trailCount = 0;
       if (lesson.state === 'complete') reset();
       demoStart = 0;
+      beginGesture();
     });
     controller.addEventListener('selectend', () => {
       if (activeController === i) {
-        lesson.release();
+        endGesture();
         activeController = -1;
-        report();
       }
     });
     controller.addEventListener('squeezestart', () => {
@@ -483,12 +524,13 @@ export function createDojo(
     pointerHeld = true;
     demoStart = 0;
     if (lesson.state === 'complete') reset();
+    beginGesture();
     movePointer(e);
   }
   function pointerUp() {
+    if (!pointerHeld) return;
     pointerHeld = false;
-    lesson.release();
-    report();
+    endGesture();
   }
   function keyDown(e: KeyboardEvent) {
     if (
@@ -503,6 +545,7 @@ export function createDojo(
         keyboardHeld = true;
         demoStart = 0;
         if (lesson.state === 'complete') reset();
+        beginGesture();
         sample(cursor);
       }
     }
@@ -511,9 +554,9 @@ export function createDojo(
   function keyUp(e: KeyboardEvent) {
     keys.delete(e.code);
     if (e.code === 'Space') {
+      if (!keyboardHeld) return;
       keyboardHeld = false;
-      lesson.release();
-      report();
+      endGesture();
     }
   }
   function blur() {
@@ -525,6 +568,7 @@ export function createDojo(
   }
   function visibilityChanged() {
     audio.pause(document.hidden);
+    if (document.hidden) voice.pause();
     blur();
   }
   document.addEventListener('visibilitychange', visibilityChanged);
@@ -732,6 +776,7 @@ export function createDojo(
           session.addEventListener('visibilitychange', () => {
             audio.pause(session.visibilityState !== 'visible');
             if (session.visibilityState !== 'visible') {
+              voice.pause();
               lesson.release();
               activeController = -1;
               report();
@@ -747,6 +792,13 @@ export function createDojo(
         );
       }
     },
+    setVoice(v) {
+      voice.setEnabled(v);
+    },
+    pronounce() {
+      audio.unlock();
+      voice.intro(true);
+    },
     setSound(v) {
       audio.setEffects(v);
     },
@@ -755,12 +807,14 @@ export function createDojo(
     },
     setVolume(v) {
       audio.setVolume(v);
+      voice.setVolume(v);
     },
     dispose() {
       disposed = true;
       renderer.setAnimationLoop(null);
       resize.disconnect();
       void renderer.xr.getSession()?.end();
+      voice.dispose();
       audio.dispose();
       environment.dispose();
       document.removeEventListener('visibilitychange', visibilityChanged);

@@ -36,6 +36,7 @@ export default function Home() {
   const [error, setError] = useState('');
   const [sound, setSound] = useState(true);
   const [music, setMusic] = useState(true);
+  const [masterVoice, setMasterVoice] = useState(true);
   const [volume, setVolume] = useState(50);
   const [mode, setMode] = useState<PracticeMode>('flow');
   const [fighter, setFighter] = useState<FighterId>('onyx');
@@ -93,7 +94,7 @@ export default function Home() {
             </h1>
           </div>
           <div className="prototype">
-            <span /> WEBXR PROTOTYPE <b>v0.4</b>
+            <span /> WEBXR PROTOTYPE <b>v0.5</b>
           </div>
         </div>
         <div className="dojo-layout">
@@ -158,6 +159,18 @@ export default function Home() {
               <span lang="ko">ㄱ</span>
               <div>
                 <h2>Giyeok</h2>
+                <button
+                  className="hear-character"
+                  disabled={!loaded}
+                  onClick={() => {
+                    api.current?.setVoice(true);
+                    setMasterVoice(true);
+                    api.current?.pronounce();
+                  }}
+                >
+                  <Volume2 size={14} />
+                  Hear ㄱ
+                </button>
                 <p>
                   기역 <span>·</span> “g” / “k” sound
                 </p>
@@ -225,6 +238,13 @@ export default function Home() {
                 {mode === 'flow'
                   ? 'Use broad, controlled sword arcs. Release between cuts to reset your stance. The first cut stays lit.'
                   : 'Keep your sword moving through the corner. One smooth, unbroken stroke.'}
+              </p>
+            </div>
+            <div className="master-caption" aria-live="polite">
+              <span>THE MASTER</span>
+              <strong lang="ko">{status.master?.ko ?? '준비됐느냐?'}</strong>
+              <p>
+                {status.master?.en ?? 'Ready? Begin practice to hear giyeok.'}
               </p>
             </div>
             <div className="progress-section">
@@ -333,6 +353,18 @@ export default function Home() {
             Take it at your pace
           </div>
           <div className="audio-controls">
+            <button
+              disabled={!loaded}
+              aria-pressed={masterVoice}
+              className="sound-button"
+              onClick={() => {
+                setMasterVoice(!masterVoice);
+                api.current?.setVoice(!masterVoice);
+              }}
+            >
+              <Volume2 size={17} />
+              Master {masterVoice ? 'on' : 'off'}
+            </button>
             <button
               disabled={!loaded}
               aria-pressed={sound}
@@ -457,6 +489,13 @@ export default function Home() {
           you release. Precise trace requires one continuous stroke. After
           completing, press the trigger to practice again. Squeeze the grip to
           recenter the guide in front of you.
+        </p>
+        <h3>The master</h3>
+        <p>
+          The master pronounces 기역 at the beginning of practice and after a
+          completed character. Mistakes earn a stern Korean correction with
+          English subtitles. Valid recovery between flow cuts is allowed. Use
+          Hear ㄱ to replay the name or the Master toggle to mute narration.
         </p>
         <h3>Your fighter</h3>
         <p>

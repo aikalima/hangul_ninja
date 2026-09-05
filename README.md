@@ -1,6 +1,6 @@
 # Hangul Ninja
 
-WebXR prototype v0.4: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the default: a rightward slash, then a downward cut. Precise trace retains the continuous tracing lesson.
+WebXR prototype v0.5: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the default: a rightward slash, then a downward cut. Precise trace retains the continuous tracing lesson.
 
 ## Run locally
 
@@ -55,3 +55,9 @@ Three cosmetic presets are selectable before or after desktop practice: Onyx (fi
 In Quest, hand meshes use each controller's grip pose and handedness. Shoulder, elbow, and torso placement is inferred from the headset and hands, not full-body tracking or measured anatomy. The torso follows head position and heading; no head mesh obstructs vision. Desktop uses a closer 58-degree camera and sword-linked hand with a resting offhand. These poses need headset checks for unusual arm reaches and clipping. The sword tip and scoring logic remain unchanged.
 
 Visual research used the supplied Google query and matching image results for anime sword POVs (gloves, wrapped grips, sleeves, and sashes). Presets and meshes are original; no third-party character art is bundled.
+
+## Korean master voice
+
+Bundled PCM WAV voice clips pronounce 기역 when practice starts and 잘했다. 기역! after completion. Three stern Korean corrections rotate after failed gestures, with a 4.5-second cooldown. Valid recovery between landed flow cuts, tiny clicks, tracking loss, and visibility changes do not trigger scolding. English/Korean captions render in both the sidebar and XR scene. Use Hear ㄱ to replay pronunciation, Master to mute narration, and Volume for the master level. Music ducks while a voice clip plays.
+
+Clips were synthesized locally with the installed Korean Yuna voice. No browser Korean voice installation or runtime speech service is required. Playback starts on a practice interaction, consistent with browser autoplay restrictions; a blocked or failed playback shows a replay hint. Voice playback pauses on hidden sessions and is cleaned up on disposal. Tests validate cue decisions and WAV assets; listening quality and immersive playback still need Quest validation.

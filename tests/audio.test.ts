@@ -151,3 +151,16 @@ void test('swishes are speed-gated and throttled; hidden audio pauses', () => {
   audio.unlock();
   assert.equal(context.state, 'closed');
 });
+void test('voice ducking restores music without overriding mute', () => {
+  const { audio, gains } = mockAudio();
+  audio.unlock();
+  audio.duck(true);
+  assert.equal(gains[1].gain.value, 0.18);
+  audio.duck(false);
+  assert.equal(gains[1].gain.value, 0.65);
+  audio.setMusic(false);
+  audio.duck(true);
+  audio.duck(false);
+  assert.equal(gains[1].gain.value, 0);
+  audio.dispose();
+});

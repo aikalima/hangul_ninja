@@ -13,6 +13,7 @@ export class DojoAudio {
   private noise: AudioBuffer | null = null;
   private effects = true;
   private music = true;
+  private ducked = false;
   private volume = 0.5;
   private nextBeat = 0;
   private beat = 0;
@@ -32,7 +33,7 @@ export class DojoAudio {
       this.master.connect(limiter).connect(ctx.destination);
       this.musicBus = ctx.createGain();
       this.effectsBus = ctx.createGain();
-      this.musicBus.gain.value = this.music ? 0.65 : 0;
+      this.musicBus.gain.value = this.music ? (this.ducked ? 0.18 : 0.65) : 0;
       this.effectsBus.gain.value = this.effects ? 0.8 : 0;
       this.musicBus.connect(this.master);
       this.effectsBus.connect(this.master);
@@ -67,10 +68,19 @@ export class DojoAudio {
     this.music = value;
     this.unlock();
     this.musicBus?.gain.setTargetAtTime(
-      value ? 0.65 : 0,
+      value ? (this.ducked ? 0.18 : 0.65) : 0,
       this.context!.currentTime,
       0.08,
     );
+  }
+  duck(active: boolean) {
+    this.ducked = active;
+    if (this.context)
+      this.musicBus?.gain.setTargetAtTime(
+        this.music ? (active ? 0.18 : 0.65) : 0,
+        this.context.currentTime,
+        0.08,
+      );
   }
   setVolume(value: number) {
     this.volume = Math.max(0, Math.min(1, value));
