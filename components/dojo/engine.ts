@@ -183,6 +183,10 @@ export function createDojo(
   heading.texture.needsUpdate = true;
   heading.sprite.position.set(0, 0.89, 0);
   lessonRoot.add(heading.sprite);
+  const subtitle = makeText(1.9, 224);
+  subtitle.sprite.position.set(0, 0.92, 0.03);
+  subtitle.sprite.visible = false;
+  lessonRoot.add(subtitle.sprite);
   const feedback = makeText(1.65, 192);
   feedback.sprite.position.set(0, -0.88, 0.01);
   lessonRoot.add(feedback.sprite);
@@ -249,6 +253,30 @@ export function createDojo(
     if (key === lastStatus) return;
     lastStatus = key;
     onStatus({ phase, progress, message, master: masterLine });
+    const sub = subtitle.ctx;
+    sub.clearRect(0, 0, 1024, 224);
+    if (masterLine) {
+      sub.fillStyle = '#141a17ee';
+      sub.fillRect(0, 0, 1024, 224);
+      sub.textAlign = 'center';
+      sub.fillStyle = '#d9b978';
+      sub.font = '22px Arial';
+      sub.fillText('MASTER', 512, 40);
+      sub.fillStyle = '#fff6e5';
+      sub.font = '32px Arial';
+      let line = '';
+      let y = 95;
+      for (const word of masterLine.en.split(' ')) {
+        const next = line ? `${line} ${word}` : word;
+        if (sub.measureText(next).width > 940 && line) {
+          sub.fillText(line, 512, y);
+          y += 42;
+          line = word;
+        } else line = next;
+      }
+      sub.fillText(line, 512, y);
+    }
+    subtitle.texture.needsUpdate = true;
     const c = feedback.ctx;
     c.clearRect(0, 0, 1024, 192);
     c.textAlign = 'center';
@@ -687,6 +715,8 @@ export function createDojo(
     guideSegments.forEach((m, i) => {
       m.material = i < lesson.next - 1 ? completeMat : guideMat;
     });
+    subtitle.sprite.visible = !!masterLine && renderer.xr.isPresenting;
+    heading.sprite.visible = !subtitle.sprite.visible;
     renderer.render(scene, camera);
   });
   report();
@@ -787,7 +817,7 @@ export function createDojo(
       });
       geometries.forEach((g) => g.dispose());
       mats.forEach((m) => m.dispose());
-      [heading, feedback, arrow].forEach((t) => t.texture.dispose());
+      [heading, feedback, arrow, subtitle].forEach((t) => t.texture.dispose());
       renderer.dispose();
       canvas.remove();
     },

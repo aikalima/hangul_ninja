@@ -109,6 +109,18 @@ export default function Home() {
                 고요한 도장 <span>·</span> THE QUIET DOJO
               </span>
             </div>
+            <div
+              className="master-subtitle"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {status.master && (
+                <>
+                  <span>MASTER</span>
+                  <p lang="en">{status.master.en}</p>
+                </>
+              )}
+            </div>
             {!loaded && (
               <div className="loading">{error || 'Lighting the lanterns…'}</div>
             )}
