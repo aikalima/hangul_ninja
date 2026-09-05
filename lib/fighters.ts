@@ -1,0 +1,36 @@
+export const FIGHTERS = [
+  {
+    id: 'onyx',
+    name: 'Onyx',
+    description: 'Fitted sleeves · crimson wraps',
+    cloth: '#242d38',
+    trim: '#a84340',
+    glove: '#343841',
+    metal: '#6f7987',
+    width: 0.082,
+    skirt: 0.38,
+  },
+  {
+    id: 'cloud',
+    name: 'Cloud',
+    description: 'Wide sleeves · jade sash',
+    cloth: '#d7d0b8',
+    trim: '#527c70',
+    glove: '#605549',
+    metal: '#b3ab8a',
+    width: 0.13,
+    skirt: 0.52,
+  },
+  {
+    id: 'ember',
+    name: 'Ember',
+    description: 'Layered sleeves · brass guards',
+    cloth: '#8e4935',
+    trim: '#d1a75d',
+    glove: '#39322c',
+    metal: '#b99350',
+    width: 0.105,
+    skirt: 0.44,
+  },
+] as const;
+export type FighterId = (typeof FIGHTERS)[number]['id'];

@@ -18,6 +18,7 @@ import {
   VolumeX,
   X,
 } from 'lucide-react';
+import { FIGHTERS, type FighterId } from '@/lib/fighters';
 import type { PracticeMode } from '@/lib/tracing';
 import type { DojoAPI, DojoStatus } from '@/components/dojo/engine';
 
@@ -37,6 +38,8 @@ export default function Home() {
   const [music, setMusic] = useState(true);
   const [volume, setVolume] = useState(50);
   const [mode, setMode] = useState<PracticeMode>('flow');
+  const [fighter, setFighter] = useState<FighterId>('onyx');
+  const [bodyVisible, setBodyVisible] = useState(true);
   const [help, setHelp] = useState(false);
   useEffect(() => {
     let disposed = false;
@@ -90,7 +93,7 @@ export default function Home() {
             </h1>
           </div>
           <div className="prototype">
-            <span /> WEBXR PROTOTYPE <b>v0.3</b>
+            <span /> WEBXR PROTOTYPE <b>v0.4</b>
           </div>
         </div>
         <div className="dojo-layout">
@@ -277,6 +280,49 @@ export default function Home() {
             </button>
           </aside>
         </div>
+        <section className="fighter-select" aria-label="Choose your fighter">
+          <div>
+            <span className="eyebrow">YOUR FIGHTER</span>
+            <p>First-person outfits</p>
+          </div>
+          <div className="fighter-options">
+            {FIGHTERS.map((f) => (
+              <button
+                disabled={!loaded}
+                key={f.id}
+                aria-pressed={fighter === f.id}
+                onClick={() => {
+                  api.current?.setFighter(f.id);
+                  setFighter(f.id);
+                }}
+              >
+                <span
+                  className="outfit-swatch"
+                  style={{ background: f.cloth, borderColor: f.trim }}
+                >
+                  <Swords size={21} style={{ color: f.trim }} />
+                </span>
+                <span>
+                  <strong>{f.name}</strong>
+                  <small>{f.description}</small>
+                </span>
+                {fighter === f.id && <Check size={15} />}
+              </button>
+            ))}
+          </div>
+          <label className="body-toggle">
+            <input
+              type="checkbox"
+              checked={bodyVisible}
+              disabled={!loaded}
+              onChange={(e) => {
+                setBodyVisible(e.target.checked);
+                api.current?.showBody(e.target.checked);
+              }}
+            />
+            Show arms & outfit
+          </label>
+        </section>
         <div className="underbar">
           <div className="comfort">
             <Crosshair size={18} />
@@ -411,6 +457,14 @@ export default function Home() {
           you release. Precise trace requires one continuous stroke. After
           completing, press the trigger to practice again. Squeeze the grip to
           recenter the guide in front of you.
+        </p>
+        <h3>Your fighter</h3>
+        <p>
+          Choose Onyx, Cloud, or Ember below the dojo. Hands, sleeves, wrist
+          guards, and robe details change together. In VR your hands follow the
+          controllers; arms and torso are an estimated cosmetic pose. Look down
+          to see your sash and robe. Turn off Show arms & outfit for an
+          unobstructed lesson.
         </p>
         <h3>Sound & atmosphere</h3>
         <p>

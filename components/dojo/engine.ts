@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { buildEnvironment } from './environment';
+import { createAvatar } from './avatar';
+import type { FighterId } from '@/lib/fighters';
 import {
   PATH,
   TraceLesson,
@@ -23,6 +25,8 @@ export type DojoAPI = {
   setMusic: (v: boolean) => void;
   setVolume: (v: number) => void;
   setMode: (mode: PracticeMode) => void;
+  setFighter: (id: FighterId) => void;
+  showBody: (visible: boolean) => void;
   dispose: () => void;
 };
 
@@ -34,8 +38,8 @@ export function createDojo(
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#666c60');
   scene.fog = new THREE.FogExp2('#62695a', 0.037);
-  const camera = new THREE.PerspectiveCamera(43, 1, 0.05, 60);
-  camera.position.set(0, 1.85, 2.65);
+  const camera = new THREE.PerspectiveCamera(58, 1, 0.05, 60);
+  camera.position.set(0, 1.72, 0.85);
   camera.lookAt(0, 1.45, -1.3);
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -337,6 +341,7 @@ export function createDojo(
   }
   const desktopSword = sword();
   scene.add(desktopSword);
+  const avatar = createAvatar(scene);
   const controllers = [
     renderer.xr.getController(0),
     renderer.xr.getController(1),
@@ -415,7 +420,7 @@ export function createDojo(
     time: 0,
   }));
   let trailCount = 0;
-  const swordOffset = new THREE.Vector3(0.3, -0.55, 0.59)
+  const swordOffset = new THREE.Vector3(0.22, -0.27, 0.84)
     .normalize()
     .multiplyScalar(0.9);
   const tipWorld = new THREE.Vector3(),
@@ -549,7 +554,7 @@ export function createDojo(
     desktopSword.visible = true;
     lessonRoot.position.set(0, 1.5, -1.12);
     lessonRoot.rotation.set(0, 0, 0);
-    camera.position.set(0, 1.85, 2.65);
+    camera.position.set(0, 1.72, 0.85);
     camera.lookAt(0, 1.45, -1.3);
     reset();
     const r = host.getBoundingClientRect();
@@ -652,6 +657,14 @@ export function createDojo(
     view.getWorldPosition(listenerPosition);
     view.getWorldDirection(listenerForward);
     listenerUp.set(0, 1, 0).transformDirection(view.matrixWorld);
+    avatar.update(
+      view,
+      desktopSword,
+      grips,
+      controllers.map((c) => c.userData.source as XRInputSource | undefined),
+      renderer.xr.isPresenting,
+      elapsed,
+    );
     audio.listener(listenerPosition, listenerForward, listenerUp);
     audio.tick(lesson.progress / 100);
     effects.update(dt, elapsed, mode === 'flow', lesson.progress);
@@ -680,6 +693,12 @@ export function createDojo(
   report();
   return {
     reset,
+    setFighter(id) {
+      avatar.select(id);
+    },
+    showBody(visible) {
+      avatar.show(visible);
+    },
     setMode(value) {
       mode = value;
       lesson = value === 'flow' ? new FlowLesson() : new TraceLesson();

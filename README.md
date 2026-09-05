@@ -1,6 +1,6 @@
 # Hangul Ninja
 
-WebXR prototype v0.3: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the default: a rightward slash, then a downward cut. Precise trace retains the continuous tracing lesson.
+WebXR prototype v0.4: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the default: a rightward slash, then a downward cut. Precise trace retains the continuous tracing lesson.
 
 ## Run locally
 
@@ -47,3 +47,11 @@ Pooled sparks, drifting motes, split targets, lantern flicker, speed-responsive 
 The dojo is now a complete 9.4 × 11 m timber room inspired by the supplied illustration: paired cylindrical columns and pegged crossbeam, upper lattice windows, thick framed shoji panels, ceiling boards, individually bound woven training mats, benches, practice-sword racks, scrolls, landscape panels, and a wooden training dummy. The reference is interpreted as full 3D geometry, not a background image.
 
 Seeded canvas textures provide timber grain, knots, woven fibers, and paper variation, with roughness and subtle bump mapping. Directional daylight casts window and structure shadows using a single static 2048px shadow map; environment geometry is merged by material and shadow behavior. Textures and the shadow map are released on scene cleanup. Physical Quest performance and the new lighting still need device validation.
+
+## First-person fighters
+
+Three cosmetic presets are selectable before or after desktop practice: Onyx (fitted charcoal sleeves and crimson wraps), Cloud (wide ivory sleeves and jade sash), and Ember (rust cloth and brass guards). Selection updates gloves, cuffs, sleeves, lapels, sash, and robe proportions together. A Show arms & outfit checkbox hides the cosmetic body without affecting input or tracing.
+
+In Quest, hand meshes use each controller's grip pose and handedness. Shoulder, elbow, and torso placement is inferred from the headset and hands, not full-body tracking or measured anatomy. The torso follows head position and heading; no head mesh obstructs vision. Desktop uses a closer 58-degree camera and sword-linked hand with a resting offhand. These poses need headset checks for unusual arm reaches and clipping. The sword tip and scoring logic remain unchanged.
+
+Visual research used the supplied Google query and matching image results for anime sword POVs (gloves, wrapped grips, sleeves, and sashes). Presets and meshes are original; no third-party character art is bundled.
