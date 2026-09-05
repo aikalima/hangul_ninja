@@ -4,8 +4,6 @@
 
 Learn to recognize and draw Hangul through katana flow cuts in a stationary 3D dojo. Hangul Ninja is a browser-based WebXR prototype for Meta Quest Browser, with a desktop preview for playing and development without a headset.
 
-[Open the hosted game](https://hangul-ninja-dojo.markus318561.chatgpt.site/). The hosted site currently requires access from its owner; installing the source locally is a separate option.
-
 ## Features
 
 - Six guided levels covering 40 Hangul characters.
@@ -28,7 +26,7 @@ No headset, database, API key, or locally installed Korean voice is needed for d
 
 ### 1. Get the source
 
-Clone this repository using its actual Git URL. Replace `YOUR_REPOSITORY_URL` below; it is a placeholder, not the hosted game URL.
+Clone this repository using its actual Git URL. Replace `YOUR_REPOSITORY_URL` below; it is a placeholder for your repository URL.
 
 ```sh
 git clone YOUR_REPOSITORY_URL hangul_ninja
@@ -67,7 +65,7 @@ This enables network access for desktop previewing. It does not provide the HTTP
 
 The Docker image builds a Node version of the game and runs Vinext’s production HTTP server as an unprivileged user. It listens on `0.0.0.0` and the `PORT` environment variable (8080 by default). Cloud Run provides the HTTPS endpoint required by Quest Browser.
 
-The Docker build sets `HANGUL_DEPLOY_TARGET=node` to omit the Sites and Cloudflare runtime plugins. It includes the game and bundled audio, but does **not** include the hosted Sites sign-in layer. The existing `npm run build` / `npm start` workflow continues to target Sites/Cloudflare.
+The Docker build sets `HANGUL_DEPLOY_TARGET=node` to omit the Sites and Cloudflare runtime plugins. It includes the game and bundled audio without an application sign-in layer. The existing `npm run build` / `npm start` workflow continues to target Sites/Cloudflare.
 
 ### Build and test the container
 
@@ -139,7 +137,7 @@ After a successful character, the next one appears automatically after three sec
 
 The game runs in the browser; no APK installation is required.
 
-1. Open an **HTTPS deployment** of the game in Meta Quest Browser. For the hosted private site, use an account with access.
+1. Open an **HTTPS deployment** of the game in Meta Quest Browser.
 2. Select **Enter VR** and allow the immersive session if prompted.
 3. Press a controller trigger to begin. Hold the trigger while sweeping the katana tip through the guide, then release to reposition.
 4. Turn your head to look around the dojo. Squeeze the controller grip to recenter the guide in front of you.
@@ -205,10 +203,10 @@ npx oxlint app components/dojo lib tests
 | `lib/voice-lines.ts` | Korean dialogue and English translations |
 | `public/audio/` | Bundled Korean audio clips |
 | `tests/` | Automated checks |
-| `.openai/hosting.json` | Existing Sites project configuration |
+| `.openai/hosting.json` | Sites build configuration |
 | `vite.config.ts` | Vinext, Sites, and Cloudflare configuration |
 
-The application uses React, TypeScript, Three.js, WebXR, Web Audio, and Vinext/Vite. Its production build targets a Cloudflare Worker with browser assets. The included Sites configuration identifies the existing hosted project; publishing requires access to that project. Do not reuse its project identity for an unrelated deployment.
+The application uses React, TypeScript, Three.js, WebXR, Web Audio, and Vinext/Vite. Its production build targets a Cloudflare Worker with browser assets. Configure your own deployment target before publishing.
 
 ## Troubleshooting
 
