@@ -281,7 +281,7 @@ export function buildEnvironment(
     canvas.width = 512;
     canvas.height = scroll ? 1024 : 512;
     const c = canvas.getContext('2d')!;
-    c.fillStyle = scroll ? '#b8a17c' : '#9e8964';
+    c.fillStyle = scroll ? '#665640' : '#9e8964';
     c.fillRect(0, 0, canvas.width, canvas.height);
     if (scroll) {
       c.fillStyle = '#302b24';
@@ -319,18 +319,6 @@ export function buildEnvironment(
     box(1.65, 1.08, 0.1, x, 2.08, -6.02, dark);
     box(1.48, 0.92, 0.03, x, 2.08, -5.955, brass);
     mesh(new THREE.PlaneGeometry(1.35, 0.8), painting, x, 2.08, -5.932, false);
-  }
-  mesh(
-    new THREE.PlaneGeometry(0.62, 1.38),
-    artwork(true),
-    0,
-    1.84,
-    -6.02,
-    false,
-  );
-  for (const y of [1.13, 2.55]) {
-    const rod = cylinder(0.032, 0.77, 0, y, -5.99, dark);
-    rod.rotation.z = Math.PI / 2;
   }
   // Small shaded lanterns; daylight remains the dominant light source.
   for (const x of [-3.25, 3.25]) {

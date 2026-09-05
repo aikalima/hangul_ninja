@@ -103,15 +103,15 @@ export function createDojo(
   lessonRoot.position.set(0, 1.5, -1.12);
   scene.add(lessonRoot);
   const guideMat = new THREE.MeshBasicMaterial({
-    color: '#c0b487',
+    color: '#e6d6a6',
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.45,
   });
   const completeMat = new THREE.MeshBasicMaterial({ color: '#ffe1a0' });
   const glowMat = new THREE.MeshBasicMaterial({
-    color: '#edb779',
+    color: '#f5ca90',
     transparent: true,
-    opacity: 0.13,
+    opacity: 0.18,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
@@ -1073,7 +1073,7 @@ export function createDojo(
     warm.intensity =
       9 + Math.sin(elapsed * 1.6) * 0.6 + Math.min(swordSpeed, 5) * 0.2;
     lanternMat.emissiveIntensity = 0.8 + Math.sin(elapsed * 2.1) * 0.1;
-    glowMat.opacity = 0.13 + Math.min(swordSpeed, 5) * 0.025;
+    glowMat.opacity = 0.18 + Math.min(swordSpeed, 5) * 0.025;
     (trail.material as THREE.MeshBasicMaterial).opacity =
       0.45 + Math.min(swordSpeed, 5) * 0.07;
     const idx = Math.min(PATH.length - 1, lesson.next);

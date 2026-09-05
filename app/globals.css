@@ -1245,37 +1245,38 @@ footer > span:nth-child(2) {
     padding-right: 8px;
   }
   .viewport-shell {
-    min-height: 600px;
-    min-height: clamp(580px, 78svh, 720px);
+    min-height: 632px;
+    min-height: clamp(612px, calc(78svh + 32px), 752px);
   }
   .viewport-shell .scene {
-    top: 132px;
+    top: 164px;
     bottom: 0;
   }
   .master-subtitle {
     top: 40px;
     bottom: auto;
     width: calc(100% - 24px);
-    padding: 7px 10px;
-    max-height: 82px;
+    padding: 12px 14px;
+    min-height: 76px;
+    max-height: 114px;
     overflow-y: auto;
     pointer-events: auto;
   }
   .master-subtitle > span {
-    font-size: 8px;
+    font-size: 10px;
   }
   .master-subtitle p {
-    margin-top: 3px;
-    font-size: 12px;
-    line-height: 1.35;
+    margin-top: 5px;
+    font-size: 15px;
+    line-height: 1.4;
   }
   .master-subtitle:has([data-master-gesture] canvas:not([hidden])) {
-    padding-right: 58px;
-    min-height: 54px;
+    padding-right: 76px;
+    min-height: 80px;
   }
   [data-master-gesture] canvas {
-    width: 48px;
-    height: 48px;
+    width: 64px;
+    height: 64px;
   }
   .scene-bottom {
     padding: 10px 12px;
