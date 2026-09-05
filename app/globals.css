@@ -1114,12 +1114,20 @@ footer > span:nth-child(2) {
   line-height: 1.45;
 }
 
+[data-master-gesture] {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.master-subtitle:has([data-master-gesture] canvas:not([hidden])) {
+  padding-right: 80px;
+  min-height: 80px;
+}
 [data-master-gesture] canvas {
-  display: inline-block;
-  width: 42px;
-  height: 42px;
-  vertical-align: middle;
-  margin-left: 6px;
+  display: block;
+  width: 64px;
+  height: 64px;
 }
 [data-master-gesture] canvas[hidden] {
   display: none;

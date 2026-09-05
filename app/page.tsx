@@ -117,8 +117,8 @@ export default function Home() {
               <span hidden={!status.master}>MASTER</span>
               <p lang="en" hidden={!status.master}>
                 {status.master?.en}
-                <span data-master-gesture aria-hidden="true" />
               </p>
+              <span data-master-gesture aria-hidden="true" />
             </div>
             {!loaded && (
               <div className="loading">{error || 'Lighting the lanterns…'}</div>

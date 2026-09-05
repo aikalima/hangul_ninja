@@ -262,29 +262,29 @@ export function createDojo(
     const sub = subtitle.ctx;
     sub.clearRect(0, 0, 1024, 224);
     if (masterLine) {
+      const hasGesture =
+        masterLine.id === 'success' || masterLine.id === 'sound-success';
+      const textCenter = hasGesture ? 450 : 512;
       sub.fillStyle = '#141a17ee';
       sub.fillRect(0, 0, 1024, 224);
       sub.textAlign = 'center';
       sub.fillStyle = '#d9b978';
       sub.font = '22px Arial';
-      sub.fillText('MASTER', 512, 40);
+      sub.fillText('MASTER', textCenter, 40);
       sub.fillStyle = '#fff6e5';
       sub.font = '32px Arial';
       let line = '';
       let y = 95;
       for (const word of masterLine.en.split(' ')) {
         const next = line ? `${line} ${word}` : word;
-        if (sub.measureText(next).width > 940 && line) {
-          sub.fillText(line, 512, y);
+        if (sub.measureText(next).width > (hasGesture ? 780 : 940) && line) {
+          sub.fillText(line, textCenter, y);
           y += 42;
           line = word;
         } else line = next;
       }
-      sub.fillText(line, 512, y);
-      celebration.position(
-        ((sub.measureText(line).width / 2 + 52) * 1.9) / 1024,
-        0.92 + ((112 - y + 10) * 1.9) / 1024,
-      );
+      sub.fillText(line, textCenter, y);
+      celebration.position(0.78, 0.92);
     }
     subtitle.texture.needsUpdate = true;
     const c = feedback.ctx;

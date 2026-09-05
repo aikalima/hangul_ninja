@@ -505,7 +505,7 @@ export function createCelebration(root: THREE.Group, slot: HTMLElement | null) {
       if (!visible) return;
       const enter = Math.min(1, age / 0.2);
       const exit = Math.max(0, (age - 1.6) / 0.4);
-      sprite.scale.setScalar(0.19);
+      sprite.scale.setScalar(0.28);
       material.opacity = enter * (1 - exit);
       canvas.style.opacity = String(material.opacity);
       draw(age);
