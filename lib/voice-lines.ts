@@ -18,6 +18,36 @@ export const VOICE_LINES = {
     ko: '그.',
     en: 'ㄱ sound in 그 (geu).',
   },
+  praisePolite: {
+    id: 'praise-polite',
+    file: 'praise-polite',
+    ko: '잘했어요!',
+    en: 'Well done!',
+  },
+  praiseCasual: {
+    id: 'praise-casual',
+    file: 'praise-casual',
+    ko: '잘했어!',
+    en: 'Nice job!',
+  },
+  praiseAwesome: {
+    id: 'praise-awesome',
+    file: 'praise-awesome',
+    ko: '대박!',
+    en: 'Awesome!',
+  },
+  praiseKeepGoing: {
+    id: 'praise-keep-going',
+    file: 'praise-keep-going',
+    ko: '화이팅!',
+    en: 'You’ve got this!',
+  },
+  praiseBest: {
+    id: 'praise-best',
+    file: 'praise-best',
+    ko: '최고!',
+    en: 'You’re the best!',
+  },
   focus: {
     id: 'focus',
     file: 'focus',
@@ -53,4 +83,16 @@ export function pronunciationLine(
     : cue === 'intro'
       ? VOICE_LINES.soundIntro
       : VOICE_LINES.soundSuccess;
+}
+
+export function encouragementFor(completions: number): VoiceLine | null {
+  if (completions < 1 || completions % 3 !== 0) return null;
+  const lines = [
+    VOICE_LINES.praisePolite,
+    VOICE_LINES.praiseCasual,
+    VOICE_LINES.praiseAwesome,
+    VOICE_LINES.praiseKeepGoing,
+    VOICE_LINES.praiseBest,
+  ];
+  return lines[(completions / 3 - 1) % lines.length];
 }

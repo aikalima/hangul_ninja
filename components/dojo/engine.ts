@@ -259,7 +259,9 @@ export function createDojo(
     sub.clearRect(0, 0, 1024, 224);
     if (masterLine) {
       const hasGesture =
-        masterLine.id === 'success' || masterLine.id === 'sound-success';
+        masterLine.id === 'success' ||
+        masterLine.id === 'sound-success' ||
+        masterLine.id.startsWith('praise-');
       const textCenter = hasGesture ? 450 : 512;
       sub.fillStyle = '#141a17ee';
       sub.fillRect(0, 0, 1024, 224);
@@ -701,7 +703,9 @@ export function createDojo(
     celebration.update(
       dt,
       renderer.xr.isPresenting,
-      masterLine?.id === 'success' || masterLine?.id === 'sound-success',
+      masterLine?.id === 'success' ||
+        masterLine?.id === 'sound-success' ||
+        !!masterLine?.id.startsWith('praise-'),
     );
     warm.intensity =
       9 + Math.sin(elapsed * 1.6) * 0.6 + Math.min(swordSpeed, 5) * 0.2;

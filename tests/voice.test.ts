@@ -102,3 +102,21 @@ void test('character narration plays once at start and only at full completion',
     globalThis.Audio = originalAudio;
   }
 });
+
+void test('encouragement appears every third completion and rotates all five phrases', async () => {
+  const { encouragementFor } = await import('../lib/voice-lines.ts');
+  const ids = [];
+  for (let i = 1; i <= 18; i++) {
+    const line = encouragementFor(i);
+    if (i % 3) assert.equal(line, null);
+    else ids.push(line?.id);
+  }
+  assert.deepEqual(ids, [
+    'praise-polite',
+    'praise-casual',
+    'praise-awesome',
+    'praise-keep-going',
+    'praise-best',
+    'praise-polite',
+  ]);
+});

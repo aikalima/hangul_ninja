@@ -1,6 +1,7 @@
 import {
   VOICE_LINES,
   pronunciationLine,
+  encouragementFor,
   type PronunciationMode,
   type VoiceLine,
 } from '../../lib/voice-lines.ts';
@@ -11,6 +12,8 @@ export class MasterVoice {
   private pronunciation: PronunciationMode = 'sound';
   private introduced = false;
   private completed = false;
+  private completions = 0;
+  private pendingPraise: VoiceLine | null = null;
   private lastMistake = -Infinity;
   private mistakeIndex = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -25,11 +28,18 @@ export class MasterVoice {
     this.player.preload = 'auto';
     this.player.volume = 0.5;
     this.player.onended = () => {
+      const praise = this.pendingPraise;
+      this.pendingPraise = null;
+      if (praise && this.enabled && !this.disposed) {
+        this.speak(praise);
+        return;
+      }
       this.duck(false);
       if (this.timer) clearTimeout(this.timer);
       this.timer = setTimeout(() => this.clear(), 1800);
     };
     this.player.onerror = () => {
+      this.pendingPraise = null;
       this.duck(false);
       this.onLine(
         this.current
@@ -52,6 +62,7 @@ export class MasterVoice {
   }
   private speak(line: VoiceLine) {
     if (this.disposed) return;
+    this.pendingPraise = null;
     this.player.pause();
     this.clear();
     this.current = line;
@@ -91,6 +102,9 @@ export class MasterVoice {
     if (progress < 100 || this.completed) return;
     this.completed = true;
     this.speak(pronunciationLine(this.pronunciation, 'success'));
+    this.pendingPraise = this.enabled
+      ? encouragementFor(++this.completions)
+      : null;
   }
   mistake() {
     const now = performance.now();
@@ -109,6 +123,7 @@ export class MasterVoice {
   setEnabled(value: boolean) {
     this.enabled = value;
     if (!value) {
+      this.pendingPraise = null;
       this.player.pause();
       this.duck(false);
     }
@@ -117,6 +132,7 @@ export class MasterVoice {
     this.player.volume = Math.max(0, Math.min(1, value));
   }
   pause() {
+    this.pendingPraise = null;
     this.player.pause();
     this.clear();
   }
