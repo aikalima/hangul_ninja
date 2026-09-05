@@ -42,7 +42,7 @@ export class TimedReview {
     if (this.index === this.order.length) this.state = 'passed';
     else {
       this.state = 'between';
-      this.deadline = now + 750;
+      this.deadline = now;
     }
   }
   remaining(now: number) {

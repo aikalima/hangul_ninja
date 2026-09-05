@@ -30,10 +30,9 @@ void test('three second default applies to each character and passing requires t
     assert.equal(r.index, i + 1);
     if (i < 5) {
       assert.equal(r.state, 'between');
-      r.tick(now + 749);
-      assert.equal(r.state, 'between');
-      now += 750;
+      assert.equal(r.remaining(now), 0);
       r.tick(now);
+      assert.equal(r.state, 'active');
       assert.equal(r.deadline, now + 3000);
       now += 500;
     }
