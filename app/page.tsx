@@ -268,6 +268,7 @@ export default function Home() {
                   <RotateCcw size={17} />
                 </button>
                 <button
+                  className="fullscreen-dojo-button"
                   title="Fullscreen dojo"
                   aria-label="Fullscreen dojo"
                   onClick={() =>
@@ -278,7 +279,8 @@ export default function Home() {
                       )
                   }
                 >
-                  <Maximize2 size={17} />
+                  <Maximize2 size={18} aria-hidden="true" />
+                  <span>Fullscreen dojo</span>
                 </button>
               </div>
             </div>
