@@ -1,0 +1,819 @@
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { PATH, TraceLesson, type TraceState } from '@/lib/tracing';
+
+export type DojoStatus = {
+  progress: number;
+  phase: TraceState | 'watching';
+  message: string;
+};
+export type DojoAPI = {
+  reset: () => void;
+  demonstrate: () => void;
+  enterVR: () => Promise<void>;
+  setSound: (v: boolean) => void;
+  dispose: () => void;
+};
+
+export function createDojo(
+  host: HTMLDivElement,
+  onStatus: (s: DojoStatus) => void,
+  onXR: (available: boolean) => void,
+): DojoAPI {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#666c60');
+  scene.fog = new THREE.FogExp2('#62695a', 0.037);
+  const camera = new THREE.PerspectiveCamera(43, 1, 0.05, 60);
+  camera.position.set(0, 1.85, 2.65);
+  camera.lookAt(0, 1.45, -1.3);
+  const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: false,
+    powerPreference: 'high-performance',
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.25;
+  renderer.xr.enabled = true;
+  renderer.xr.setReferenceSpaceType('local-floor');
+  renderer.xr.setFramebufferScaleFactor(1);
+  const canvas = renderer.domElement;
+  canvas.tabIndex = 0;
+  canvas.setAttribute(
+    'aria-label',
+    'Trace the glowing Hangul guide. Drag, or hold Space and use arrow keys. R resets.',
+  );
+  host.appendChild(canvas);
+  scene.add(new THREE.HemisphereLight('#e1e0ba', '#3c3024', 2.1));
+  const sun = new THREE.DirectionalLight('#ffe5b2', 2.4);
+  sun.position.set(-4, 8, -5);
+  scene.add(sun);
+  const warm = new THREE.PointLight('#ffb267', 12, 12, 2);
+  warm.position.set(0, 3, 0);
+  scene.add(warm);
+  const architecture = new THREE.Group();
+  scene.add(architecture);
+  const materials = {
+    wood: new THREE.MeshStandardMaterial({ color: '#342b24', roughness: 0.95 }),
+    edge: new THREE.MeshStandardMaterial({ color: '#55412e', roughness: 0.9 }),
+    floor: new THREE.MeshStandardMaterial({ color: '#63513b', roughness: 1 }),
+    seam: new THREE.MeshStandardMaterial({ color: '#3b382a', roughness: 1 }),
+    paper: new THREE.MeshStandardMaterial({
+      color: '#d8c595',
+      roughness: 1,
+      emissive: '#c19952',
+      emissiveIntensity: 0.2,
+    }),
+    roof: new THREE.MeshStandardMaterial({ color: '#302e28', roughness: 1 }),
+    green: new THREE.MeshStandardMaterial({ color: '#687459', roughness: 1 }),
+  };
+  const box = (
+    w: number,
+    h: number,
+    d: number,
+    x: number,
+    y: number,
+    z: number,
+    mat: THREE.Material,
+    parent: THREE.Object3D = architecture,
+  ) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    parent.add(m);
+    return m;
+  };
+  box(17, 0.15, 18, 0, -0.13, 0, materials.floor);
+  for (let z = -8; z < 9; z += 0.65) {
+    box(17, 0.008, 0.014, 0, -0.047, z, materials.seam);
+    for (let x = -8; x < 8; x += 2.8)
+      box(
+        0.013,
+        0.008,
+        0.63,
+        x + (Math.round(z / 0.65) % 2) * 1.4,
+        -0.047,
+        z + 0.32,
+        materials.seam,
+      );
+  }
+  // Open timber pavilion, paper lattice walls, and a distant garden.
+  for (const x of [-4.2, 4.2])
+    for (const z of [-5, -1, 3.2]) {
+      box(0.24, 4.6, 0.24, x, 2.2, z, materials.wood);
+      box(0.42, 0.2, 0.42, x, 0.04, z, materials.edge);
+      box(0.48, 0.18, 0.48, x, 3.77, z, materials.edge);
+    }
+  for (const z of [-5, -1, 3.2]) {
+    box(9.3, 0.3, 0.27, 0, 4.12, z, materials.wood);
+    box(8.8, 0.11, 0.4, 0, 3.85, z, materials.edge);
+  }
+  for (const x of [-4.2, 4.2]) box(0.3, 0.28, 9, x, 4.1, -0.9, materials.wood);
+  box(10, 0.18, 10, 0, 4.55, -1, materials.roof);
+  for (let x = -4.5; x <= 4.5; x += 0.65)
+    box(0.065, 0.23, 9.8, x, 4.34, -1, materials.edge);
+  for (const x of [-3.2, 3.2]) {
+    box(2.2, 3.7, 0.1, x, 1.8, -5, materials.paper);
+    for (let dx = -1; dx <= 1; dx += 0.36)
+      box(0.034, 3.7, 0.13, x + dx, 1.8, -4.92, materials.edge);
+    for (let y = 0.3; y < 3.8; y += 0.44)
+      box(2.2, 0.035, 0.13, x, y, -4.92, materials.edge);
+  }
+  box(2.4, 0.14, 0.22, 0, 3.52, -5, materials.wood);
+  for (const x of [-1.24, 1.24])
+    box(0.13, 3.6, 0.2, x, 1.75, -5, materials.wood);
+  box(35, 0.12, 23, 0, -0.28, -16, materials.green);
+  // Low-poly bamboo silhouettes through the open walls.
+  const bamboo = new THREE.MeshStandardMaterial({
+    color: '#4e624a',
+    roughness: 1,
+  });
+  for (let i = 0; i < 28; i++) {
+    const x = Math.sin(i * 7.3) * 11,
+      z = -7 - (i % 6) * 1.3,
+      h = 2.8 + (i % 5) * 0.48;
+    box(0.065, h, 0.065, x, h / 2 - 0.3, z, bamboo);
+    for (let j = 0; j < 3; j++) {
+      const leaf = box(
+        0.7,
+        0.025,
+        0.16,
+        x + (j % 2 ? 0.2 : -0.2),
+        h - 0.4 - j * 0.53,
+        z,
+        bamboo,
+      );
+      leaf.rotation.z = (j % 2 ? 1 : -1) * 0.5;
+    }
+  }
+  // Warm hanging lanterns flank the guide without post-processing bloom.
+  const lanternMat = new THREE.MeshStandardMaterial({
+    color: '#ffe4a6',
+    emissive: '#ffbd63',
+    emissiveIntensity: 1.6,
+    roughness: 1,
+  });
+  for (const x of [-2.65, 2.65])
+    for (const z of [-3.9, 1.8]) {
+      box(0.018, 0.5, 0.018, x, 3.65, z, materials.wood);
+      const lantern = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.22, 0.24, 0.48, 10),
+        lanternMat,
+      );
+      lantern.position.set(x, 3.15, z);
+      architecture.add(lantern);
+      box(0.49, 0.045, 0.49, x, 3.4, z, materials.wood);
+      box(0.49, 0.045, 0.49, x, 2.9, z, materials.wood);
+      for (let i = 0; i < 6; i++)
+        box(
+          0.024,
+          0.48,
+          0.024,
+          x + Math.cos((i * Math.PI) / 3) * 0.225,
+          3.15,
+          z + Math.sin((i * Math.PI) / 3) * 0.225,
+          materials.edge,
+        );
+    }
+  // Merge static geometry by material to keep Quest draw calls low.
+  const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  architecture.updateMatrixWorld(true);
+  architecture.traverse((o) => {
+    if (o instanceof THREE.Mesh) {
+      const mat = o.material as THREE.Material;
+      const list = batches.get(mat) || [];
+      list.push(o.geometry.clone().applyMatrix4(o.matrixWorld));
+      batches.set(mat, list);
+      o.geometry.dispose();
+    }
+  });
+  architecture.clear();
+  for (const [mat, geometries] of batches) {
+    const geometry = mergeGeometries(geometries, false);
+    if (geometry) architecture.add(new THREE.Mesh(geometry, mat));
+    geometries.forEach((g) => g.dispose());
+  }
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.72, 0.728, 80),
+    new THREE.MeshBasicMaterial({
+      color: '#cbbb8b',
+      transparent: true,
+      opacity: 0.25,
+      side: THREE.DoubleSide,
+    }),
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.set(0, -0.035, 0.1);
+  scene.add(ring);
+  const outer = ring.clone();
+  outer.scale.setScalar(1.09);
+  scene.add(outer);
+  // Everything the learner needs in VR is real scene geometry, including text.
+  const lessonRoot = new THREE.Group();
+  lessonRoot.position.set(0, 1.5, -1.12);
+  scene.add(lessonRoot);
+  const guideMat = new THREE.MeshBasicMaterial({
+    color: '#c0b487',
+    transparent: true,
+    opacity: 0.3,
+  });
+  const completeMat = new THREE.MeshBasicMaterial({ color: '#ffe1a0' });
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: '#edb779',
+    transparent: true,
+    opacity: 0.13,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  function segment(
+    a: THREE.Vector3,
+    b: THREE.Vector3,
+    r: number,
+    mat: THREE.Material,
+    parent: THREE.Object3D,
+  ) {
+    const d = new THREE.Vector3().subVectors(b, a);
+    const m = new THREE.Mesh(
+      new THREE.CylinderGeometry(r, r, d.length(), 8),
+      mat,
+    );
+    m.position.copy(a).add(b).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+    parent.add(m);
+    return m;
+  }
+  const guideSegments: THREE.Mesh[] = [];
+  for (let i = 1; i < PATH.length; i++) {
+    const a = new THREE.Vector3(PATH[i - 1].x, PATH[i - 1].y, 0),
+      b = new THREE.Vector3(PATH[i].x, PATH[i].y, 0);
+    guideSegments.push(segment(a, b, 0.011, guideMat, lessonRoot));
+    segment(a, b, 0.035, glowMat, lessonRoot);
+  }
+  const gridMat = new THREE.LineBasicMaterial({
+    color: '#d6ceaa',
+    transparent: true,
+    opacity: 0.12,
+  });
+  const gridPts: THREE.Vector3[] = [];
+  for (let i = -2; i <= 2; i++) {
+    const p = i * 0.3;
+    gridPts.push(
+      new THREE.Vector3(p, -0.6, -0.018),
+      new THREE.Vector3(p, 0.6, -0.018),
+      new THREE.Vector3(-0.6, p, -0.018),
+      new THREE.Vector3(0.6, p, -0.018),
+    );
+  }
+  lessonRoot.add(
+    new THREE.LineSegments(
+      new THREE.BufferGeometry().setFromPoints(gridPts),
+      gridMat,
+    ),
+  );
+  const target = new THREE.Mesh(
+    new THREE.TorusGeometry(0.044, 0.006, 6, 32),
+    completeMat,
+  );
+  target.position.set(-0.45, 0.45, 0.012);
+  lessonRoot.add(target);
+  const spark = new THREE.Mesh(
+    new THREE.SphereGeometry(0.018, 8, 6),
+    new THREE.MeshBasicMaterial({ color: '#fff0c6' }),
+  );
+  lessonRoot.add(spark);
+  spark.position.copy(target.position);
+  function makeText(width: number, height: number) {
+    const c = document.createElement('canvas');
+    c.width = 1024;
+    c.height = height;
+    const ctx = c.getContext('2d')!;
+    const texture = new THREE.CanvasTexture(c);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const sprite = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        depthWrite: false,
+      }),
+    );
+    sprite.scale.set(width, (width * height) / 1024, 1);
+    return { c, ctx, texture, sprite };
+  }
+  const heading = makeText(1.45, 160);
+  heading.ctx.textAlign = 'center';
+  heading.ctx.fillStyle = '#e6d5ac';
+  heading.ctx.font = '500 33px Arial';
+  heading.ctx.fillText('ㄱ   /   GIYEOK', 512, 63);
+  heading.ctx.fillStyle = '#b9bbaa';
+  heading.ctx.font = '19px Arial';
+  heading.ctx.fillText('ONE STROKE. ACROSS, THEN DOWN.', 512, 112);
+  heading.texture.needsUpdate = true;
+  heading.sprite.position.set(0, 0.89, 0);
+  lessonRoot.add(heading.sprite);
+  const feedback = makeText(1.65, 192);
+  feedback.sprite.position.set(0, -0.88, 0.01);
+  lessonRoot.add(feedback.sprite);
+  const arrow = makeText(0.8, 160);
+  arrow.ctx.fillStyle = '#f5d196';
+  arrow.ctx.font = '38px Arial';
+  arrow.ctx.textAlign = 'center';
+  arrow.ctx.fillText('START  →', 512, 90);
+  arrow.texture.needsUpdate = true;
+  arrow.sprite.position.set(-0.42, 0.59, 0.01);
+  lessonRoot.add(arrow.sprite);
+  const lesson = new TraceLesson();
+  let lastStatus = '',
+    demoStart = 0,
+    disposed = false,
+    sound = false,
+    audio: AudioContext | null = null;
+  const keys = new Set<string>();
+  let keyboardHeld = false,
+    pointerHeld = false,
+    activeController = -1,
+    needsCenter = false;
+  const cursor = new THREE.Vector3(-0.45, 0.45, 0.025);
+  const worldCursor = new THREE.Vector3();
+  function report() {
+    const watching = demoStart > 0;
+    const phase = watching ? 'watching' : lesson.state;
+    const progress = watching ? 0 : lesson.progress;
+    const message = watching
+      ? 'Watch: right, then down.'
+      : phase === 'complete'
+        ? 'Beautiful. Your first Hangul stroke.'
+        : phase === 'retry'
+          ? 'Return to the circle and try again.'
+          : phase === 'tracing'
+            ? progress < 48
+              ? 'Move right toward the corner.'
+              : 'Turn downward. Keep holding.'
+            : 'Start at the glowing circle.';
+    const key = `${phase}:${progress}`;
+    if (key === lastStatus) return;
+    lastStatus = key;
+    onStatus({ phase, progress, message });
+    const c = feedback.ctx;
+    c.clearRect(0, 0, 1024, 192);
+    c.textAlign = 'center';
+    c.fillStyle = phase === 'complete' ? '#d4eab0' : '#f1dec0';
+    c.font = '28px Arial';
+    c.fillText(message, 512, 65);
+    c.fillStyle = '#c8cbbb';
+    c.font = '21px Arial';
+    c.fillText(
+      renderer.xr.isPresenting
+        ? phase === 'complete'
+          ? 'Press trigger to practice again'
+          : 'Hold trigger to trace · Squeeze grip to recenter'
+        : 'Hold & drag · Follow the light',
+      512,
+      110,
+    );
+    c.font = '18px Arial';
+    c.fillText(watching ? 'DEMONSTRATION' : `${progress}%  COMPLETE`, 512, 153);
+    feedback.texture.needsUpdate = true;
+  }
+  function tone(completed = false) {
+    if (!sound) return;
+    audio ??= new AudioContext();
+    void audio.resume();
+    const osc = audio.createOscillator(),
+      gain = audio.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(completed ? 660 : 440, audio.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(
+      completed ? 880 : 330,
+      audio.currentTime + 0.18,
+    );
+    gain.gain.setValueAtTime(0.07, audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.45);
+    osc.connect(gain).connect(audio.destination);
+    osc.start();
+    osc.stop(audio.currentTime + 0.5);
+  }
+  function sample(p: THREE.Vector3) {
+    const before = lesson.next;
+    lesson.sample(p);
+    if (
+      lesson.next !== before &&
+      (lesson.next === 21 || lesson.state === 'complete')
+    ) {
+      tone(lesson.state === 'complete');
+      const source =
+        activeController >= 0
+          ? (controllers[activeController].userData.source as XRInputSource)
+          : undefined;
+      source?.gamepad?.hapticActuators?.[0]?.pulse(0.35, 60).catch(() => {});
+    }
+    report();
+  }
+  function reset() {
+    demoStart = 0;
+    lesson.reset();
+    trailCount = 0;
+    cursor.set(-0.45, 0.45, 0.025);
+    lastStatus = '';
+    report();
+    if (!renderer.xr.isPresenting) canvas.focus({ preventScroll: true });
+  }
+  function sword() {
+    const group = new THREE.Group();
+    const bladeMat = new THREE.MeshStandardMaterial({
+      color: '#ecedde',
+      metalness: 0.75,
+      roughness: 0.25,
+      emissive: '#c5c3ab',
+      emissiveIntensity: 0.25,
+    });
+    box(0.024, 0.035, 0.65, 0, 0, -0.47, bladeMat, group);
+    box(0.033, 0.025, 0.18, 0, 0, -0.06, materials.wood, group);
+    box(0.16, 0.025, 0.06, 0, 0, -0.145, materials.edge, group);
+    for (let i = 0; i < 5; i++)
+      box(0.037, 0.03, 0.012, 0, 0, -i * 0.026, materials.edge, group);
+    const tip = new THREE.Mesh(
+      new THREE.ConeGeometry(0.017, 0.11, 4),
+      bladeMat,
+    );
+    tip.rotation.x = -Math.PI / 2;
+    tip.position.z = -0.845;
+    group.add(tip);
+    const edge = new THREE.Mesh(
+      new THREE.BoxGeometry(0.007, 0.042, 0.68),
+      completeMat,
+    );
+    edge.position.set(0.015, 0, -0.49);
+    group.add(edge);
+    return group;
+  }
+  const desktopSword = sword();
+  scene.add(desktopSword);
+  const controllers = [
+    renderer.xr.getController(0),
+    renderer.xr.getController(1),
+  ];
+  const grips = [
+    renderer.xr.getControllerGrip(0),
+    renderer.xr.getControllerGrip(1),
+  ];
+  controllers.forEach((controller, i) => {
+    scene.add(controller, grips[i]);
+    grips[i].add(sword());
+    controller.addEventListener('connected', (e) => {
+      controller.userData.source = e.data;
+    });
+    controller.addEventListener('disconnected', () => {
+      delete controller.userData.source;
+      if (activeController === i) {
+        lesson.release();
+        activeController = -1;
+        report();
+      }
+    });
+    controller.addEventListener('selectstart', () => {
+      if (activeController !== -1) return;
+      activeController = i;
+      if (lesson.state === 'complete') reset();
+      demoStart = 0;
+    });
+    controller.addEventListener('selectend', () => {
+      if (activeController === i) {
+        lesson.release();
+        activeController = -1;
+        report();
+      }
+    });
+    controller.addEventListener('squeezestart', () => {
+      lesson.release();
+      reset();
+      needsCenter = true;
+    });
+  });
+  // A fixed-size ribbon records blade motion. No geometry is allocated per frame.
+  const trailLength = 48,
+    trailPositions = new Float32Array(trailLength * 18),
+    trailColors = new Float32Array(trailLength * 18);
+  const trailGeometry = new THREE.BufferGeometry();
+  trailGeometry.setAttribute(
+    'position',
+    new THREE.BufferAttribute(trailPositions, 3).setUsage(
+      THREE.DynamicDrawUsage,
+    ),
+  );
+  trailGeometry.setAttribute(
+    'color',
+    new THREE.BufferAttribute(trailColors, 3).setUsage(THREE.DynamicDrawUsage),
+  );
+  const trail = new THREE.Mesh(
+    trailGeometry,
+    new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.55,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    }),
+  );
+  trail.frustumCulled = false;
+  scene.add(trail);
+  const history = Array.from({ length: trailLength + 1 }, () => ({
+    tip: new THREE.Vector3(),
+    base: new THREE.Vector3(),
+    time: 0,
+  }));
+  let trailCount = 0;
+  const swordOffset = new THREE.Vector3(0.3, -0.55, 0.59)
+    .normalize()
+    .multiplyScalar(0.9);
+  const tipWorld = new THREE.Vector3(),
+    baseWorld = new THREE.Vector3(),
+    localTip = new THREE.Vector3(),
+    temp = new THREE.Vector3();
+  function updateTrail(tip: THREE.Vector3, base: THREE.Vector3, time: number) {
+    for (let i = Math.min(trailCount, trailLength); i > 0; i--) {
+      history[i].tip.copy(history[i - 1].tip);
+      history[i].base.copy(history[i - 1].base);
+      history[i].time = history[i - 1].time;
+    }
+    history[0].tip.copy(tip);
+    history[0].base.copy(base);
+    history[0].time = time;
+    trailCount = Math.min(trailCount + 1, trailLength);
+    let offset = 0;
+    for (let i = 0; i < trailCount - 1; i++) {
+      const a = history[i],
+        b = history[i + 1],
+        fade = Math.max(0, 1 - (time - b.time) / 0.32);
+      const points = [a.tip, a.base, b.tip, a.base, b.base, b.tip];
+      for (const p of points) {
+        trailPositions[offset] = p.x;
+        trailColors[offset++] = fade;
+        trailPositions[offset] = p.y;
+        trailColors[offset++] = fade * 0.57;
+        trailPositions[offset] = p.z;
+        trailColors[offset++] = fade * 0.18;
+      }
+    }
+    trailGeometry.setDrawRange(0, offset / 3);
+    trailGeometry.attributes.position.needsUpdate = true;
+    trailGeometry.attributes.color.needsUpdate = true;
+  }
+  const raycaster = new THREE.Raycaster(),
+    plane = new THREE.Plane(),
+    normal = new THREE.Vector3(0, 0, 1),
+    ndc = new THREE.Vector2();
+  function movePointer(e: PointerEvent) {
+    if (renderer.xr.isPresenting) return;
+    const r = canvas.getBoundingClientRect();
+    ndc.set(
+      ((e.clientX - r.left) / r.width) * 2 - 1,
+      (-(e.clientY - r.top) / r.height) * 2 + 1,
+    );
+    raycaster.setFromCamera(ndc, camera);
+    plane.setFromNormalAndCoplanarPoint(normal, lessonRoot.position);
+    if (raycaster.ray.intersectPlane(plane, temp)) {
+      cursor.copy(lessonRoot.worldToLocal(temp));
+      cursor.z = 0.025;
+      if (pointerHeld && !demoStart) sample(cursor);
+    }
+  }
+  function pointerDown(e: PointerEvent) {
+    if (e.button !== 0 || renderer.xr.isPresenting) return;
+    canvas.focus({ preventScroll: true });
+    canvas.setPointerCapture(e.pointerId);
+    pointerHeld = true;
+    demoStart = 0;
+    if (lesson.state === 'complete') reset();
+    movePointer(e);
+  }
+  function pointerUp() {
+    pointerHeld = false;
+    lesson.release();
+    report();
+  }
+  function keyDown(e: KeyboardEvent) {
+    if (
+      ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(
+        e.code,
+      )
+    ) {
+      e.preventDefault();
+      keys.add(e.code);
+      if (e.code === 'Space' && !keyboardHeld) {
+        keyboardHeld = true;
+        demoStart = 0;
+        if (lesson.state === 'complete') reset();
+        sample(cursor);
+      }
+    }
+    if (e.code === 'KeyR') reset();
+  }
+  function keyUp(e: KeyboardEvent) {
+    keys.delete(e.code);
+    if (e.code === 'Space') {
+      keyboardHeld = false;
+      lesson.release();
+      report();
+    }
+  }
+  function blur() {
+    keys.clear();
+    keyboardHeld = false;
+    pointerHeld = false;
+    lesson.release();
+    report();
+  }
+  canvas.addEventListener('pointermove', movePointer);
+  canvas.addEventListener('pointerdown', pointerDown);
+  canvas.addEventListener('pointerup', pointerUp);
+  canvas.addEventListener('pointercancel', pointerUp);
+  canvas.addEventListener('lostpointercapture', pointerUp);
+  canvas.addEventListener('keydown', keyDown);
+  canvas.addEventListener('keyup', keyUp);
+  canvas.addEventListener('blur', blur);
+  const resize = new ResizeObserver(() => {
+    if (renderer.xr.isPresenting) return;
+    const { width, height } = host.getBoundingClientRect();
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
+  });
+  resize.observe(host);
+  renderer.xr.addEventListener('sessionstart', () => {
+    needsCenter = true;
+    desktopSword.visible = false;
+    reset();
+  });
+  renderer.xr.addEventListener('sessionend', () => {
+    activeController = -1;
+    desktopSword.visible = true;
+    lessonRoot.position.set(0, 1.5, -1.12);
+    lessonRoot.rotation.set(0, 0, 0);
+    camera.position.set(0, 1.85, 2.65);
+    camera.lookAt(0, 1.45, -1.3);
+    reset();
+    const r = host.getBoundingClientRect();
+    renderer.setSize(r.width, r.height);
+  });
+  if (navigator.xr)
+    navigator.xr
+      .isSessionSupported('immersive-vr')
+      .then((v) => {
+        if (!disposed) onXR(v);
+      })
+      .catch(() => {});
+  let lastFrame = 0,
+    elapsed = 0;
+  renderer.setAnimationLoop((time) => {
+    const dt = lastFrame ? Math.min((time - lastFrame) / 1000, 0.05) : 0;
+    lastFrame = time;
+    elapsed += dt;
+    if (needsCenter && renderer.xr.isPresenting) {
+      const xrCamera = renderer.xr.getCamera();
+      xrCamera.getWorldPosition(temp);
+      const direction = new THREE.Vector3();
+      xrCamera.getWorldDirection(direction);
+      direction.y = 0;
+      direction.normalize();
+      lessonRoot.position.copy(temp).addScaledVector(direction, 1.05);
+      lessonRoot.position.y = temp.y - 0.15;
+      lessonRoot.rotation.y = Math.atan2(-direction.x, -direction.z);
+      lessonRoot.updateMatrixWorld(true);
+      needsCenter = false;
+    }
+    if (demoStart) {
+      const t = (elapsed - demoStart) / 3;
+      const p = Math.min(40, Math.max(0, t * 40)),
+        i = Math.floor(p),
+        next = Math.min(40, i + 1);
+      cursor.set(
+        THREE.MathUtils.lerp(PATH[i].x, PATH[next].x, p - i),
+        THREE.MathUtils.lerp(PATH[i].y, PATH[next].y, p - i),
+        0.025,
+      );
+      if (t >= 1.2) {
+        demoStart = 0;
+        lesson.reset();
+        report();
+      }
+    } else if (!renderer.xr.isPresenting) {
+      const speed = 0.42 * dt;
+      cursor.x +=
+        (Number(keys.has('ArrowRight')) - Number(keys.has('ArrowLeft'))) *
+        speed;
+      cursor.y +=
+        (Number(keys.has('ArrowUp')) - Number(keys.has('ArrowDown'))) * speed;
+      if (keyboardHeld) sample(cursor);
+    }
+    if (renderer.xr.isPresenting) {
+      const i =
+        activeController >= 0
+          ? activeController
+          : controllers.findIndex(
+              (c) => c.userData.source?.handedness === 'right',
+            );
+      const index = i >= 0 ? i : 0;
+      grips[index].updateWorldMatrix(true, false);
+      tipWorld.set(0, 0, -0.9).applyMatrix4(grips[index].matrixWorld);
+      baseWorld.set(0, 0, -0.22).applyMatrix4(grips[index].matrixWorld);
+      if (controllers[index].userData.source) {
+        updateTrail(tipWorld, baseWorld, elapsed);
+        if (activeController >= 0) {
+          localTip.copy(tipWorld);
+          lessonRoot.worldToLocal(localTip);
+          sample(localTip);
+        }
+      }
+    } else {
+      worldCursor.copy(cursor);
+      lessonRoot.localToWorld(worldCursor);
+      desktopSword.position.copy(worldCursor).add(swordOffset);
+      desktopSword.lookAt(worldCursor);
+      desktopSword.rotateY(Math.PI);
+      desktopSword.updateWorldMatrix(true, false);
+      tipWorld.set(0, 0, -0.9).applyMatrix4(desktopSword.matrixWorld);
+      baseWorld.set(0, 0, -0.24).applyMatrix4(desktopSword.matrixWorld);
+      updateTrail(tipWorld, baseWorld, elapsed);
+    }
+    const idx = Math.min(PATH.length - 1, lesson.next);
+    target.position.set(PATH[idx].x, PATH[idx].y, 0.014);
+    target.scale.setScalar(1 + Math.sin(elapsed * 4) * 0.15);
+    target.visible = lesson.state !== 'complete';
+    arrow.sprite.visible = lesson.next < 2 && !demoStart;
+    if (demoStart) spark.position.copy(cursor);
+    else spark.position.copy(target.position);
+    spark.visible = lesson.state !== 'complete';
+    guideSegments.forEach((m, i) => {
+      m.material = i < lesson.next - 1 ? completeMat : guideMat;
+    });
+    renderer.render(scene, camera);
+  });
+  report();
+  return {
+    reset,
+    demonstrate() {
+      reset();
+      demoStart = Math.max(0.001, elapsed);
+      report();
+    },
+    async enterVR() {
+      if (!window.isSecureContext)
+        throw new Error(
+          'VR needs HTTPS. Open the hosted dojo in Meta Quest Browser.',
+        );
+      if (
+        !navigator.xr ||
+        !(await navigator.xr.isSessionSupported('immersive-vr'))
+      )
+        throw new Error(
+          'No VR headset detected. Open this dojo in Meta Quest Browser, or use the desktop preview above.',
+        );
+      if (renderer.xr.isPresenting) return;
+      try {
+        const session = await navigator.xr.requestSession('immersive-vr', {
+          requiredFeatures: ['local-floor'],
+        });
+        try {
+          await renderer.xr.setSession(session);
+        } catch (error) {
+          await session.end();
+          throw error;
+        }
+      } catch {
+        throw new Error(
+          'VR could not start. Allow VR access in Quest Browser and try again.',
+        );
+      }
+    },
+    setSound(v) {
+      sound = v;
+      if (v) tone();
+    },
+    dispose() {
+      disposed = true;
+      renderer.setAnimationLoop(null);
+      resize.disconnect();
+      void renderer.xr.getSession()?.end();
+      void audio?.close();
+      const geometries = new Set<THREE.BufferGeometry>(),
+        mats = new Set<THREE.Material>();
+      scene.traverse((o) => {
+        if (
+          o instanceof THREE.Mesh ||
+          o instanceof THREE.Line ||
+          o instanceof THREE.Sprite
+        ) {
+          if ('geometry' in o) geometries.add(o.geometry);
+          const ms = Array.isArray(o.material) ? o.material : [o.material];
+          ms.forEach((m) => mats.add(m));
+        }
+      });
+      geometries.forEach((g) => g.dispose());
+      mats.forEach((m) => m.dispose());
+      [heading, feedback, arrow].forEach((t) => t.texture.dispose());
+      renderer.dispose();
+      canvas.remove();
+    },
+  };
+}
