@@ -1239,16 +1239,17 @@ footer > span:nth-child(2) {
     display: none;
   }
 
-  /* Reserve a footer below the 3D canvas so messages never cover the character. */
+  /* Reserve a header above the mobile canvas for the master card. */
   .viewport-shell {
     min-height: 500px;
   }
   .viewport-shell .scene {
-    bottom: 140px;
+    top: 132px;
+    bottom: 0;
   }
   .master-subtitle {
-    top: auto;
-    bottom: 54px;
+    top: 40px;
+    bottom: auto;
     width: calc(100% - 24px);
     padding: 7px 10px;
     max-height: 82px;
@@ -1280,5 +1281,7 @@ footer > span:nth-child(2) {
 }
 
 @media (max-width: 720px) {
-  .scene-bottom .fullscreen-dojo-button { display: none; }
+  .scene-bottom .fullscreen-dojo-button {
+    display: none;
+  }
 }
