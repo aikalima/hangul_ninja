@@ -289,13 +289,6 @@ export default function Home() {
                 your stance. Completed cuts stay lit.
               </p>
             </div>
-            <div className="master-caption" aria-live="polite">
-              <span>THE MASTER</span>
-              <strong lang="ko">{status.master?.ko ?? '준비됐느냐?'}</strong>
-              <p>
-                {status.master?.en ?? `Ready? Begin to hear ${vowel.roman}.`}
-              </p>
-            </div>
             <div className="progress-section">
               <div>
                 <span>

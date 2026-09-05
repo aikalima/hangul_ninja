@@ -467,23 +467,17 @@ export function createDojo(
     c.textAlign = 'center';
     c.fillStyle = phase === 'complete' ? '#d4eab0' : '#f1dec0';
     c.font = '28px Arial';
-    c.fillText(
-      stage.startsWith('review-') ? message : (masterLine?.ko ?? message),
-      512,
-      65,
-      1000,
-    );
+    c.fillText(message, 512, 65, 1000);
     c.fillStyle = '#c8cbbb';
     c.font = '21px Arial';
     c.fillText(
-      masterLine?.en ??
-        (renderer.xr.isPresenting
-          ? phase === 'complete'
-            ? stage === 'character-complete'
-              ? 'Next character appears automatically'
-              : 'Press trigger to continue'
-            : 'Hold trigger to cut · Release between strokes · Grip: recenter'
-          : 'Drag along each numbered cut · Release to reposition'),
+      renderer.xr.isPresenting
+        ? phase === 'complete'
+          ? stage === 'character-complete'
+            ? 'Next character appears automatically'
+            : 'Press trigger to continue'
+          : 'Hold trigger to cut · Release between strokes · Grip: recenter'
+        : 'Drag along each numbered cut · Release to reposition',
       512,
       110,
     );
