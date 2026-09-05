@@ -1,3 +1,9 @@
+## Timed review checkpoints
+
+After completing a level’s practice, a shuffled review is required before the level is marked complete. The pool contains every character in the current and immediately previous level, without duplicates. Only Level 1 is playable today, so its review uses its six vowels. The generic pool builder is tested for later-level combinations; later tracing lessons remain upcoming.
+
+A three-second preparation countdown precedes the first character. Each character gets three seconds by default (configurable from 1–10 before the round). Successful characters advance automatically after a 750ms transition. Every item must be completed before its deadline; a miss ends the attempt, and retry reshuffles the entire pool. Backgrounding or leaving VR interrupts the attempt. Timers use wall-clock deadlines, and completion is checked against the deadline, including between render frames. Review state and passes are session-local. Level 2 remains unavailable until its lesson is implemented.
+
 # Hangul Ninja · Level 1
 
 The playable curriculum now begins with six basic vowels: ㅏ a, ㅓ eo, ㅗ o, ㅜ u, ㅡ eu, ㅣ i. A level introduction precedes practice; each completed character waits for Next/trigger, and the sixth ends on a persistent Level 1 completion state. Replay returns to ㅏ. Progress is session-local.

@@ -69,9 +69,17 @@ export default function Home() {
   const vowel = VOWELS[index];
   const stage = status.stage ?? 'intro';
   const finished = stage === 'level-complete';
-  const doneCount = finished
-    ? 6
-    : index + (stage === 'character-complete' ? 1 : 0);
+  const reviewing = stage.startsWith('review-');
+  const timed = [
+    'review-countdown',
+    'review-active',
+    'review-between',
+  ].includes(stage);
+  const reviewSeconds = status.reviewSeconds ?? 3;
+  const doneCount =
+    finished || reviewing
+      ? 6
+      : index + (stage === 'character-complete' ? 1 : 0);
   const advance = () => api.current?.advance();
   return (
     <main>
@@ -127,25 +135,35 @@ export default function Home() {
         <section className="level-banner" aria-live="polite">
           <div>
             <span className="eyebrow">
-              {finished
-                ? 'LEVEL COMPLETE'
-                : stage === 'intro'
-                  ? 'A NEW LEVEL BEGINS'
-                  : 'LEVEL 1 · BASIC VOWELS'}
+              {reviewing
+                ? 'INTERIM CHALLENGE · TIMED REVIEW'
+                : finished
+                  ? 'LEVEL COMPLETE'
+                  : stage === 'intro'
+                    ? 'A NEW LEVEL BEGINS'
+                    : 'LEVEL 1 · BASIC VOWELS'}
             </span>
             <h2>
-              {finished
-                ? 'Six vowels. Foundation complete.'
-                : stage === 'intro'
-                  ? 'Welcome to Level 1'
-                  : `${vowel.glyph} · ${vowel.roman}`}
+              {reviewing
+                ? stage === 'review-failed'
+                  ? 'Time’s up. Try the mix again.'
+                  : stage === 'review-ready'
+                    ? 'Mix it up before you move on.'
+                    : 'Trace it before time runs out.'
+                : finished
+                  ? 'Review passed. Level 1 complete.'
+                  : stage === 'intro'
+                    ? 'Welcome to Level 1'
+                    : `${vowel.glyph} · ${vowel.roman}`}
             </h2>
             <p>
-              {finished
-                ? 'You completed ㅏ ㅓ ㅗ ㅜ ㅡ ㅣ. Level 2: Basic consonants is coming soon.'
-                : stage === 'intro'
-                  ? 'Learn six vowels through flowing katana cuts. Follow the numbered strokes, then move to the next character.'
-                  : `${doneCount} of 6 characters complete · ${vowel.directions.join(' → ')}`}
+              {reviewing
+                ? 'Every character must be completed in time. Level 1 mixes its six vowels; later reviews mix the current and previous level. A timeout restarts the review.'
+                : finished
+                  ? 'Timed review passed! You are ready for Level 2: Basic consonants (coming soon).'
+                  : stage === 'intro'
+                    ? 'Learn six vowels through flowing katana cuts. Follow the numbered strokes, then move to the next character.'
+                    : `${doneCount} of 6 characters complete · ${vowel.directions.join(' → ')}`}
             </p>
           </div>
           <div
@@ -165,6 +183,42 @@ export default function Home() {
             ))}
           </div>
         </section>
+        {reviewing && (
+          <section className="review-controls" aria-label="Timed review">
+            <strong>
+              {stage === 'review-countdown'
+                ? `Get ready · ${Math.ceil(status.reviewRemaining ?? 3)}`
+                : stage === 'review-active'
+                  ? `${(status.reviewRemaining ?? 0).toFixed(1)}s left`
+                  : stage === 'review-between'
+                    ? 'Correct! Next…'
+                    : stage === 'review-failed'
+                      ? 'Review not passed'
+                      : 'Six characters · shuffled'}
+            </strong>
+            <span>
+              {status.reviewIndex ?? 0} / {status.reviewTotal ?? 6} passed
+            </span>
+            <label>
+              Seconds per character{' '}
+              <input
+                type="number"
+                min="1"
+                max="10"
+                step="1"
+                value={reviewSeconds}
+                disabled={timed}
+                onChange={(e) =>
+                  api.current?.setReviewSeconds(Number(e.target.value) || 3)
+                }
+              />
+            </label>
+            <p>
+              Complete every stroke in order. Release and re-grip for the next
+              character.
+            </p>
+          </section>
+        )}
         <div className="dojo-layout">
           <section className="viewport-shell" aria-label="Interactive 3D dojo">
             <div ref={host} className="scene" />
@@ -326,7 +380,7 @@ export default function Home() {
             </div>
             <button
               className="primary-button"
-              disabled={!loaded}
+              disabled={!loaded || timed}
               onClick={advance}
             >
               {status.phase === 'complete' ? (
@@ -334,18 +388,24 @@ export default function Home() {
               ) : (
                 <Swords size={18} />
               )}{' '}
-              {finished
-                ? 'Replay Level 1'
-                : stage === 'intro'
-                  ? 'Begin Level 1'
-                  : stage === 'character-complete'
-                    ? `Next: ${VOWELS[Math.min(5, index + 1)].glyph}`
-                    : 'Restart character'}
+              {stage === 'review-ready'
+                ? 'Start timed review'
+                : stage === 'review-failed'
+                  ? 'Retry timed review'
+                  : timed
+                    ? 'Review in progress'
+                    : finished
+                      ? 'Replay Level 1'
+                      : stage === 'intro'
+                        ? 'Begin Level 1'
+                        : stage === 'character-complete'
+                          ? `Next: ${VOWELS[Math.min(5, index + 1)].glyph}`
+                          : 'Restart character'}
               <ArrowRight size={18} />
             </button>
             <button
               className="secondary-button"
-              disabled={!loaded || finished}
+              disabled={!loaded || finished || reviewing}
               onClick={() => api.current?.demonstrate()}
             >
               <Play size={15} /> Watch this character
@@ -493,9 +553,18 @@ export default function Home() {
         <p>
           Enter VR and press a trigger to begin the level. Follow the numbered
           cuts with the katana tip. After completing a character, release and
-          press the trigger to advance. After the sixth vowel, the level
-          completion message stays visible until you replay. Squeeze the grip to
-          recenter the guide.
+          press the trigger to advance. After the sixth vowel, press the trigger
+          to start the timed review. Pass every character before Level 1 is
+          complete. Squeeze the grip to recenter the guide.
+        </p>
+        <h3>Timed review</h3>
+        <p>
+          After the lesson, start a shuffled review. Each character has three
+          seconds by default; change this to 1–10 seconds before starting. Trace
+          all strokes before the timer expires. All characters must pass to
+          finish the level. A timeout requires a new attempt. Hiding the app
+          interrupts the attempt. Level 1 reviews its six vowels; future levels
+          include the preceding level too.
         </p>
         <h3>The master</h3>
         <p>

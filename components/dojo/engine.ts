@@ -3,6 +3,7 @@ import { buildEnvironment } from './environment';
 import { createKatana, KATANA_TIP, KATANA_TRAIL_INNER } from './katana';
 import type { TraceState } from '@/lib/tracing';
 import { VOWELS, VowelLesson } from '@/lib/levels';
+import { TimedReview, reviewPool } from '@/lib/review';
 import { DojoAudio } from './audio';
 import { MasterVoice } from './voice';
 import { type PronunciationMode, type VoiceLine } from '@/lib/voice-lines';
@@ -15,12 +16,26 @@ export type DojoStatus = {
   message: string;
   master?: VoiceLine | null;
   characterIndex?: number;
-  stage?: 'intro' | 'active' | 'character-complete' | 'level-complete';
+  stage?:
+    | 'intro'
+    | 'active'
+    | 'character-complete'
+    | 'level-complete'
+    | 'review-ready'
+    | 'review-countdown'
+    | 'review-active'
+    | 'review-between'
+    | 'review-failed';
+  reviewSeconds?: number;
+  reviewRemaining?: number;
+  reviewIndex?: number;
+  reviewTotal?: number;
   cutIndex?: number;
 };
 export type DojoAPI = {
   reset: () => void;
   advance: () => void;
+  setReviewSeconds: (seconds: number) => void;
   demonstrate: () => void;
   enterVR: () => Promise<void>;
   setSound: (v: boolean) => void;
@@ -113,6 +128,7 @@ export function createDojo(
     parent.add(m);
     return m;
   }
+  const review = new TimedReview();
   let characterIndex = 0;
   let stage: NonNullable<DojoStatus['stage']> = 'intro';
   let PATH = VOWELS[0].cuts.flat();
@@ -245,7 +261,7 @@ export function createDojo(
   }
   function endGesture() {
     if (
-      stage === 'active' &&
+      (stage === 'active' || stage === 'review-active') &&
       gestureDistance >= 0.18 &&
       lesson.completedCuts === gestureStart
     )
@@ -268,16 +284,29 @@ export function createDojo(
     const progress = watching ? 0 : lesson.progress;
     const vowel = VOWELS[characterIndex];
     const message =
-      stage === 'intro'
-        ? 'LEVEL 1 BEGINS · Press trigger to start.'
-        : stage === 'level-complete'
-          ? 'LEVEL 1 COMPLETE · Trigger: replay · Level 2 coming soon.'
-          : stage === 'character-complete'
-            ? `${vowel.glyph} complete · Press trigger or Next character.`
-            : watching
-              ? `Watch ${vowel.glyph}: follow each cut in order.`
-              : `${Math.min(lesson.completedCuts + 1, vowel.cuts.length)} / ${vowel.cuts.length} · ${vowel.directions[lesson.completedCuts] ?? 'Complete'}`;
-    const key = `${stage}:${characterIndex}:${phase}:${progress}`;
+      stage === 'review-ready'
+        ? 'TIMED REVIEW · All six vowels. Pass to finish Level 1.'
+        : stage === 'review-countdown'
+          ? `GET READY · ${Math.ceil(review.remaining(performance.now()))}`
+          : stage === 'review-active'
+            ? `REVIEW ${review.index + 1}/${review.order.length} · ${review.remaining(performance.now()).toFixed(1)}s remaining`
+            : stage === 'review-between'
+              ? 'Correct! Next character…'
+              : stage === 'review-failed'
+                ? 'TIME UP · Retry the shuffled review to advance.'
+                : stage === 'intro'
+                  ? 'LEVEL 1 BEGINS · Press trigger to start.'
+                  : stage === 'level-complete'
+                    ? 'REVIEW PASSED · Level 1 complete · Level 2 coming soon.'
+                    : stage === 'character-complete'
+                      ? `${vowel.glyph} complete · Press trigger or Next character.`
+                      : watching
+                        ? `Watch ${vowel.glyph}: follow each cut in order.`
+                        : `${Math.min(lesson.completedCuts + 1, vowel.cuts.length)} / ${vowel.cuts.length} · ${vowel.directions[lesson.completedCuts] ?? 'Complete'}`;
+    const timer = stage.startsWith('review-')
+      ? review.remaining(performance.now()).toFixed(1)
+      : '';
+    const key = `${stage}:${characterIndex}:${phase}:${progress}:${timer}:${review.seconds}`;
     if (key === lastStatus) return;
     lastStatus = key;
     onStatus({
@@ -288,27 +317,35 @@ export function createDojo(
       characterIndex,
       stage,
       cutIndex: lesson.completedCuts,
+      reviewSeconds: review.seconds,
+      reviewRemaining: review.remaining(performance.now()),
+      reviewIndex: review.index,
+      reviewTotal: review.order.length || 6,
     });
     heading.ctx.clearRect(0, 0, 1024, 160);
     heading.ctx.textAlign = 'center';
     heading.ctx.fillStyle = '#e6d5ac';
     heading.ctx.font = '500 36px Arial';
     heading.ctx.fillText(
-      stage === 'level-complete'
-        ? 'LEVEL 1 COMPLETE'
-        : stage === 'intro'
-          ? 'LEVEL 1 · BASIC VOWELS'
-          : `LEVEL 1 · ${characterIndex + 1}/6 · ${vowel.glyph} ${vowel.roman}`,
+      stage.startsWith('review-')
+        ? 'LEVEL 1 · TIMED REVIEW'
+        : stage === 'level-complete'
+          ? 'LEVEL 1 COMPLETE'
+          : stage === 'intro'
+            ? 'LEVEL 1 · BASIC VOWELS'
+            : `LEVEL 1 · ${characterIndex + 1}/6 · ${vowel.glyph} ${vowel.roman}`,
       512,
       63,
     );
     heading.ctx.font = '22px Arial';
     heading.ctx.fillText(
-      stage === 'level-complete'
-        ? 'ㅏ  ㅓ  ㅗ  ㅜ  ㅡ  ㅣ · All six learned'
-        : stage === 'intro'
-          ? 'Press trigger to begin · ㅏ ㅓ ㅗ ㅜ ㅡ ㅣ'
-          : vowel.directions.join(' · '),
+      stage.startsWith('review-')
+        ? message
+        : stage === 'level-complete'
+          ? 'ㅏ  ㅓ  ㅗ  ㅜ  ㅡ  ㅣ · All six learned'
+          : stage === 'intro'
+            ? 'Press trigger to begin · ㅏ ㅓ ㅗ ㅜ ㅡ ㅣ'
+            : vowel.directions.join(' · '),
       512,
       112,
     );
@@ -348,7 +385,12 @@ export function createDojo(
     c.textAlign = 'center';
     c.fillStyle = phase === 'complete' ? '#d4eab0' : '#f1dec0';
     c.font = '28px Arial';
-    c.fillText(masterLine?.ko ?? message, 512, 65, 1000);
+    c.fillText(
+      stage.startsWith('review-') ? message : (masterLine?.ko ?? message),
+      512,
+      65,
+      1000,
+    );
     c.fillStyle = '#c8cbbb';
     c.font = '21px Arial';
     c.fillText(
@@ -367,7 +409,12 @@ export function createDojo(
   }
   const hitPosition = new THREE.Vector3();
   function sample(p: THREE.Vector3) {
-    if (stage !== 'active' || demoStart) return;
+    if ((stage !== 'active' && stage !== 'review-active') || demoStart) return;
+    if (stage === 'review-active' && performance.now() >= review.deadline) {
+      review.interrupt();
+      syncReview();
+      return;
+    }
     if (gesturePrevious)
       gestureDistance += Math.min(0.5, gesturePrevious.distanceTo(p));
     gesturePrevious = p.clone();
@@ -383,10 +430,14 @@ export function createDojo(
       lessonRoot.localToWorld(hitPosition);
       audio.impact(hitPosition, complete);
       if (complete) {
-        stage =
-          characterIndex === VOWELS.length - 1
-            ? 'level-complete'
-            : 'character-complete';
+        if (stage === 'review-active') {
+          review.complete(performance.now());
+          syncReview();
+        } else
+          stage =
+            characterIndex === VOWELS.length - 1
+              ? 'review-ready'
+              : 'character-complete';
         voice.success(lesson.progress);
         celebration.play();
       }
@@ -407,6 +458,14 @@ export function createDojo(
     report();
   }
   function reset() {
+    if (stage.startsWith('review-')) {
+      review.state = 'ready';
+      stage = 'review-ready';
+      voice.pause();
+      lastStatus = '';
+      report();
+      return;
+    }
     demoStart = 0;
     stage = 'active';
     lesson.reset();
@@ -423,7 +482,57 @@ export function createDojo(
     report();
     if (!renderer.xr.isPresenting) canvas.focus({ preventScroll: true });
   }
+  function loadReviewCharacter() {
+    characterIndex = VOWELS.findIndex(
+      (v) => v.glyph === review.order[review.index],
+    );
+    const vowel = VOWELS[characterIndex];
+    lesson.cuts = vowel.cuts;
+    PATH = vowel.cuts.flat();
+    rebuildGuide();
+    lesson.reset();
+    effects.reset();
+    celebration.reset();
+    pointerHeld = false;
+    keyboardHeld = false;
+    activeController = -1;
+    keys.clear();
+    gestureDistance = 0;
+    gesturePrevious = null;
+    trailCount = 0;
+    tipValid = false;
+    cursor.set(PATH[0].x, PATH[0].y, 0.025);
+    voice.setCharacter(vowel);
+    voice.beginCharacter();
+  }
+  function syncReview() {
+    const desired =
+      review.state === 'passed'
+        ? 'level-complete'
+        : review.state === 'ready'
+          ? 'review-ready'
+          : (`review-${review.state}` as NonNullable<DojoStatus['stage']>);
+    const changed = stage !== desired;
+    stage = desired;
+    if (changed && review.state === 'active') loadReviewCharacter();
+    if (changed && review.state === 'failed') {
+      voice.pause();
+      lesson.release();
+      pointerHeld = false;
+      keyboardHeld = false;
+      activeController = -1;
+    }
+    report();
+  }
   function advance() {
+    if (stage === 'review-ready' || stage === 'review-failed') {
+      audio.unlock();
+      voice.pause();
+      review.start(reviewPool(0), performance.now());
+      syncReview();
+      return;
+    }
+    if (stage.startsWith('review-')) return;
     if (stage === 'active') {
       reset();
       return;
@@ -467,7 +576,11 @@ export function createDojo(
       activeController = i;
       tipValid = false;
       trailCount = 0;
-      if (lesson.state === 'complete') {
+      if (
+        stage === 'review-ready' ||
+        stage === 'review-failed' ||
+        lesson.state === 'complete'
+      ) {
         advance();
         return;
       }
@@ -592,7 +705,11 @@ export function createDojo(
     canvas.setPointerCapture(e.pointerId);
     pointerHeld = true;
     demoStart = 0;
-    if (lesson.state === 'complete') {
+    if (
+      stage === 'review-ready' ||
+      stage === 'review-failed' ||
+      lesson.state === 'complete'
+    ) {
       advance();
       return;
     }
@@ -616,7 +733,11 @@ export function createDojo(
         audio.unlock();
         keyboardHeld = true;
         demoStart = 0;
-        if (lesson.state === 'complete') {
+        if (
+          stage === 'review-ready' ||
+          stage === 'review-failed' ||
+          lesson.state === 'complete'
+        ) {
           advance();
           return;
         }
@@ -643,7 +764,13 @@ export function createDojo(
   }
   function visibilityChanged() {
     audio.pause(document.hidden);
-    if (document.hidden) voice.pause();
+    if (document.hidden) {
+      voice.pause();
+      if (stage.startsWith('review-')) {
+        review.interrupt();
+        syncReview();
+      }
+    }
     blur();
   }
   document.addEventListener('visibilitychange', visibilityChanged);
@@ -670,6 +797,10 @@ export function createDojo(
     report();
   });
   renderer.xr.addEventListener('sessionend', () => {
+    if (stage.startsWith('review-')) {
+      review.interrupt();
+      syncReview();
+    }
     activeController = -1;
     desktopSword.visible = true;
     lessonRoot.position.set(0, 1.5, -1.12);
@@ -701,6 +832,13 @@ export function createDojo(
     const dt = lastFrame ? Math.min((time - lastFrame) / 1000, 0.05) : 0;
     lastFrame = time;
     elapsed += dt;
+    if (
+      stage.startsWith('review-') &&
+      !['review-ready', 'review-failed'].includes(stage)
+    ) {
+      review.tick(performance.now());
+      syncReview();
+    }
     if (needsCenter && renderer.xr.isPresenting) {
       const xrCamera = renderer.xr.getCamera();
       xrCamera.getWorldPosition(temp);
@@ -807,7 +945,8 @@ export function createDojo(
     target.position.set(PATH[idx].x, PATH[idx].y, 0.014);
     target.scale.setScalar(1 + Math.sin(elapsed * 4) * 0.15);
     target.visible = lesson.state !== 'complete';
-    arrow.sprite.visible = stage === 'active' && !demoStart;
+    arrow.sprite.visible =
+      (stage === 'active' || stage === 'review-active') && !demoStart;
     const activeCut =
       VOWELS[characterIndex].cuts[
         Math.min(lesson.completedCuts, VOWELS[characterIndex].cuts.length - 1)
@@ -839,7 +978,15 @@ export function createDojo(
   return {
     reset,
     advance,
+    setReviewSeconds(seconds) {
+      if (review.state === 'ready' || review.state === 'failed') {
+        review.seconds = Math.max(1, Math.min(10, Math.round(seconds)));
+        lastStatus = '';
+        report();
+      }
+    },
     demonstrate() {
+      if (stage.startsWith('review-')) return;
       reset();
       demoStart = Math.max(0.001, elapsed);
       report();
@@ -867,6 +1014,10 @@ export function createDojo(
           session.addEventListener('visibilitychange', () => {
             audio.pause(session.visibilityState !== 'visible');
             if (session.visibilityState !== 'visible') {
+              if (stage.startsWith('review-')) {
+                review.interrupt();
+                syncReview();
+              }
               voice.pause();
               lesson.release();
               activeController = -1;
