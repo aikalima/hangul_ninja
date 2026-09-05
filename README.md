@@ -1,79 +1,163 @@
-# Hangul Ninja · Six-level course
-
-All 40 characters are playable, in the requested order: basic vowels (6), basic consonants (9), Y vowels (4), aspirated consonants (5), tense consonants (5), and compound vowels (11).
-
-Complete each character with ordered katana flow cuts. Pronunciation plays at the beginning and 500 ms after completion. The next character appears after three seconds. The final character ends the level with Korean congratulations, one English translation above the dojo, and a centered confirmation to start the next level. Level 6 finishes the course and offers replay from Level 1. Progress is session-local. Timed reviews remain disabled.
-
-Circles are split into four curved cuts, and corners into separate cuts: game cut counts are not handwriting stroke counts. Consonants offer sound/name playback; sounds use a short syllable with a supporting vowel, since consonants cannot all be pronounced naturally in isolation. ㅇ is silent initially and ng finally, demonstrated with 응. Korean PCM voice clips are bundled locally. Music defaults off.
-
-Curriculum geometry, reverse/shortcut rejection, all 40 sound/name assets, and level boundaries are covered by automated tests. Physical Quest comfort, reach, and audio still require headset testing.
-
-Romanization reference: [National Institute of Korean Language](https://www.korean.go.kr/front_eng/roman/roman_01.do).
-
-## Prototype implementation notes (earlier iterations)
-
 # Hangul Ninja
 
-WebXR prototype v0.6: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the only practice mode: a rightward slash, then a downward cut.
+Learn to recognize and draw Hangul through katana flow cuts in a stationary 3D dojo. Hangul Ninja is a browser-based WebXR prototype for Meta Quest Browser, with a desktop preview for playing and development without a headset.
 
-## Run locally
+[Open the hosted game](https://hangul-ninja-dojo.markus318561.chatgpt.site/). The hosted site currently requires access from its owner; installing the source locally is a separate option.
 
-Requires Node 22.18+ (Node 24 LTS recommended).
+## Features
+
+- Six guided levels covering 40 Hangul characters.
+- A timber dojo you can look around in VR, with controller-held katanas and glowing tip trails.
+- Ordered straight, diagonal, and curved cuts, with demonstrations and progress feedback.
+- Bundled Korean pronunciation and master dialogue, with English translations above the dojo.
+- Rotating encouragement and anime celebrations that remain visible until replaced or cleared by a mistake.
+- Sword effects and optional background music. Music starts off.
+
+## Install and run
+
+### Requirements
+
+- Node.js 22.18 or newer, with npm.
+- Git if you are cloning the repository; alternatively, use an extracted source download.
+- A desktop browser with WebGL for the preview.
+- For VR: a Meta Quest headset, its controllers, and Meta Quest Browser.
+
+No headset, database, API key, or locally installed Korean voice is needed for desktop development. Korean voice clips are included in `public/audio/`.
+
+### 1. Get the source
+
+Clone this repository using its actual Git URL. Replace `YOUR_REPOSITORY_URL` below; it is a placeholder, not the hosted game URL.
 
 ```sh
+git clone YOUR_REPOSITORY_URL hangul_ninja
+cd hangul_ninja
+```
+
+If you already have the source, open a terminal in the directory containing `package.json`. Keep the included `.openai/hosting.json` file: the Vite configuration imports it.
+
+### 2. Install dependencies
+
+Check your runtime and install the versions recorded in the lockfile:
+
+```sh
+node --version
+npm --version
 npm ci
+```
+
+### 3. Start the game
+
+```sh
+npm run dev
+```
+
+Open the local URL printed in the terminal, normally **http://localhost:3000/**. Keep the terminal running while you play. Press **Ctrl+C** to stop the server.
+
+To expose the development server to other devices on your network:
+
+```sh
 npm run dev -- --host 0.0.0.0
 ```
 
-Open the printed localhost URL. In Flow cuts, drag through the horizontal guide from left to right, then cut down through the vertical guide. Release between landed cuts to recover; partial cuts restart on release. Touch is supported. For keyboard input, focus the dojo, hold Space, and use arrow keys; R resets. “Watch the stroke” is a demonstration and does not earn completion. The first practice interaction unlocks audio. Separate music/effects toggles and a master volume slider are below the dojo.
+This enables network access for desktop previewing. It does not provide the HTTPS connection needed for immersive VR on a headset.
 
-## Meta Quest Browser
+## Play on desktop
 
-Open the hosted HTTPS URL in Quest Browser (sign in with the owning account for the private preview). Choose Enter VR and grant the browser permission. Localhost on a desktop does not refer to that desktop from the headset, and plain LAN HTTP does not satisfy WebXR's secure-context requirement.
+1. Select **Begin Level 1**.
+2. Hold the mouse button and drag the katana tip through the numbered cuts in order.
+3. Release between cuts to reposition. Completed cuts remain lit; an unfinished cut restarts when released.
+4. Use **Watch this character** for a demonstration or **Hear** to replay pronunciation.
 
-Use either controller: hold its trigger and sweep the sword tip right through the horizontal guide, then cut down. Flow mode uses swept collisions with a 14 cm path tolerance and 45 cm depth allowance; it preserves the first landed slash while you release and recover. Press trigger after success to repeat. Squeeze the grip to reposition the lesson in front of the current head pose. Exit using the Quest system menu. Stand or sit with a clear arm's-length space; there is no artificial locomotion.
+For keyboard practice, focus the dojo, hold **Space**, and move with the **arrow keys**. Press **R** to restart the current character. Touch dragging is also supported.
 
-Implementation requests `immersive-vr` with `local-floor`, attaches swords to controller grip spaces, samples the actual blade tip in lesson-local coordinates, and renders guidance inside the XR scene. Head height and facing direction position the guide on entry and recenter. Haptics are optional. Static meshes are merged by material and the trail uses a fixed-size GPU buffer without post-processing.
+After a successful character, the next one appears automatically after three seconds. At the end of a level, confirm **I’m ready** in the center panel to advance, or choose to practice the level again. Completing Level 6 offers a restart from Level 1.
 
-## Validation
+## Play in Meta Quest Browser
+
+The game runs in the browser; no APK installation is required.
+
+1. Open an **HTTPS deployment** of the game in Meta Quest Browser. For the hosted private site, use an account with access.
+2. Select **Enter VR** and allow the immersive session if prompted.
+3. Press a controller trigger to begin. Hold the trigger while sweeping the katana tip through the guide, then release to reposition.
+4. Turn your head to look around the dojo. Squeeze the controller grip to recenter the guide in front of you.
+5. Release the trigger after completing a character. The next character appears automatically; at a level boundary, press the trigger to confirm advancement.
+6. Exit VR using the Quest system menu.
+
+A headset’s `localhost` refers to the headset itself, not your development computer. To test a local checkout in immersive VR, provide a trusted HTTPS endpoint to the development server or deploy the application over HTTPS. A plain `http://192.168.…` LAN address is insufficient for immersive WebXR.
+
+The player remains stationary, with no artificial locomotion. Use a clear play space within your headset’s boundary.
+
+## Levels
+
+| Level | Group | Characters |
+| --- | --- | --- |
+| 1 | Basic vowels | ㅏ ㅓ ㅗ ㅜ ㅡ ㅣ |
+| 2 | Basic consonants | ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ |
+| 3 | Y vowels | ㅑ ㅕ ㅛ ㅠ |
+| 4 | Aspirated consonants | ㅋ ㅌ ㅍ ㅊ ㅎ |
+| 5 | Tense consonants | ㄲ ㄸ ㅃ ㅆ ㅉ |
+| 6 | Compound vowels | ㅐ ㅔ ㅒ ㅖ ㅘ ㅝ ㅚ ㅟ ㅙ ㅞ ㅢ |
+
+Cuts are adapted for gameplay: corners and circular arcs can be separate cuts, so their counts are not traditional handwriting stroke counts. The course teaches individual letters, not full syllable composition.
+
+## Voice and audio
+
+Pronunciation plays when a character begins and 500 milliseconds after full completion, rather than after each cut. Consonants offer **sound** and **name** playback. Sound examples use a supporting vowel where needed; ㅇ is silent at the start of a syllable and `ng` at the end, demonstrated with 응.
+
+With master audio enabled, every third non-final character completion rotates through 잘했어요, 잘했어, 대박, 화이팅, and 최고. Level endings use separate congratulations. Mistakes can trigger Korean corrections with a cooldown. The master card retains the latest translation between messages.
+
+Use the **Master**, **Effects**, **Music**, and **Volume** controls below the dojo. Audio starts after a user interaction. The bundled dialogue was synthesized with the Korean Yuna voice; running the app does not require that voice or an external speech service. Background music is synthesized with Web Audio.
+
+## Development commands
 
 ```sh
-npm test
-npm run typecheck
-npm run build
-npx oxlint app components/dojo lib/tracing.ts tests
+npm run dev        # Development server
+npm run typecheck  # TypeScript checks
+npm test           # Recognition, curriculum, audio, and voice tests
+npm run build      # Build the Worker and browser assets
+npm start          # Run the built Worker locally through Wrangler
 ```
 
-Fourteen tests cover flow cuts (order, arcs, recovery, stale poses, teleports, depth, and shortcuts) plus mocked audio lifecycle, independent mute buses, volume bounds, swish throttling, and visibility pause. These audio tests validate scheduling, not audible quality. The full scaffold lint command also scans generated, unused shadcn components; those have upstream lint findings.
+Run `npm run build` before `npm start`, then open the URL printed by Wrangler. `npm start` is a local production-build preview; it does not publish the game.
 
-Physical Quest testing is still required for controller orientation/reach, session entry and exit, recentering, and sustained frame rate. Desktop rendering cannot certify headset comfort or device performance. Progress is per session, without saved accounts or scores.
+To lint the game code:
 
-WebXR references: [Three.js WebXRManager](https://threejs.org/docs/pages/WebXRManager.html) and [MDN session security](https://developer.mozilla.org/en-US/docs/Web/API/WebXR_Device_API/Permissions_and_security).
+```sh
+npx oxlint app components/dojo lib tests
+```
 
-## Sound and reaction design
+`npm run lint` checks the whole repository, including unused scaffold components that may have unrelated findings. `npm run format` formats the repository.
 
-The soundtrack is an original Web Audio composition: a pentatonic plucked melody at 88 BPM, low drum pulses, and filtered wind. No music files, external streaming services, or copyrighted recordings are used. The soundtrack adds percussion as progress builds. HRTF-positioned swishes respond to sword-tip speed; cuts and completion have distinct musical impacts. One AudioContext is created on interaction, hidden sessions suspend it, and disposal closes it.
+### Project structure
 
-Pooled sparks, drifting motes, split targets, lantern flicker, speed-responsive trails, and a completion ring make the scene react without moving or shaking the VR camera. Geometry remains bounded; device performance and listening quality still need a Quest playtest.
+| Path | Purpose |
+| --- | --- |
+| `app/page.tsx` | Desktop interface and game controls |
+| `app/globals.css` | Interface styling |
+| `components/dojo/engine.ts` | Three.js scene, input, VR, and lesson progression |
+| `components/dojo/celebration.ts` | Anime celebration graphics |
+| `components/dojo/voice.ts` | Master narration and playback scheduling |
+| `lib/curriculum.ts` | All 40 characters, cut geometry, and pronunciation metadata |
+| `lib/levels.ts` | Level metadata and ordered-cut recognition |
+| `lib/voice-lines.ts` | Korean dialogue and English translations |
+| `public/audio/` | Bundled Korean audio clips |
+| `tests/` | Automated checks |
+| `.openai/hosting.json` | Existing Sites project configuration |
+| `vite.config.ts` | Vinext, Sites, and Cloudflare configuration |
 
-## Reference-inspired room
+The application uses React, TypeScript, Three.js, WebXR, Web Audio, and Vinext/Vite. Its production build targets a Cloudflare Worker with browser assets. The included Sites configuration identifies the existing hosted project; publishing requires access to that project. Do not reuse its project identity for an unrelated deployment.
 
-The dojo is now a complete 9.4 × 11 m timber room inspired by the supplied illustration: paired cylindrical columns and pegged crossbeam, upper lattice windows, thick framed shoji panels, ceiling boards, individually bound woven training mats, benches, practice-sword racks, scrolls, landscape panels, and a wooden training dummy. The reference is interpreted as full 3D geometry, not a background image.
+## Troubleshooting
 
-Seeded canvas textures provide timber grain, knots, woven fibers, and paper variation, with roughness and subtle bump mapping. Directional daylight casts window and structure shadows using a single static 2048px shadow map; environment geometry is merged by material and shadow behavior. Textures and the shadow map are released on scene cleanup. Physical Quest performance and the new lighting still need device validation.
+- **Installation or tests fail with syntax/runtime errors:** check `node --version`, use Node 22.18 or newer, then run `npm ci` again.
+- **The default port is occupied:** use the URL printed by the server, or run `npm run dev -- --port 3001`.
+- **No voice or sound:** begin a lesson or select **Hear**, check the audio toggles and volume, and confirm the browser tab is not muted.
+- **VR cannot start:** open the game directly in Meta Quest Browser over HTTPS and allow the immersive session. A desktop browser without an XR device only provides the preview.
+- **The guide is awkwardly positioned:** squeeze the controller grip to recenter it.
+- **A character will not complete:** follow the current cut’s direction with the katana tip, release to recover between cuts, and use its demonstration to check the order.
 
-## Katana-only view
+## Prototype limitations
 
-Desktop and Quest display only the katana. In Quest, the weapon is attached directly to each controller grip pose. Arms, hands, clothing, and their selection controls have been removed.
+Progress is held in the current session and resets on reload. There are no saved profiles or scores. Timed interim reviews are currently disabled, although their implementation and tests remain in the repository.
 
-## Korean master voice
-
-Bundled PCM WAV voice clips pronounce the active character at the start and after full completion. Every third completion adds a rotating Korean encouragement. Three stern Korean corrections rotate after failed gestures, with a 4.5-second cooldown. Valid recovery between landed flow cuts, tiny clicks, tracking loss, and visibility changes do not trigger scolding. The English translation renders once above the dojo, including inside XR. Use Hear ㄱ to replay pronunciation, Master to mute narration, and Volume for the master level. Music ducks while a voice clip plays.
-
-Clips were synthesized locally with the installed Korean Yuna voice. No browser Korean voice installation or runtime speech service is required. Playback starts on a practice interaction, consistent with browser autoplay restrictions; a blocked or failed playback shows a replay hint. Voice playback pauses on hidden sessions and is cleaned up on disposal. Tests validate cue decisions and WAV assets; listening quality and immersive playback still need Quest validation.
-
-## Katana refinement
-
-The weapon is a curved, tapered katana with a diamond-section blade, subtle temper line, oval iron guard, brass fittings, and diamond-pattern handle wrap. Shared blade-tip landmarks drive both scoring and the 6 cm tip-only trail. Desktop placement compensates for the curve, keeping the actual rendered tip on the pointer's tracing position.
-
-Precise mode has been removed from the UI, engine, recognition code, and instructions. All practice uses flow cuts.
+Automated tests cover recognition, curriculum data, audio assets, and playback logic. Physical Quest testing is still required to verify controller reach and orientation, audio playback, comfort, and sustained frame rate.
