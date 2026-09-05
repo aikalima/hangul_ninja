@@ -1239,9 +1239,14 @@ footer > span:nth-child(2) {
     display: none;
   }
 
-  /* Reserve a header above the mobile canvas for the master card. */
+  /* Give mobile tracing more room while retaining the master-card header. */
+  .workspace {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
   .viewport-shell {
-    min-height: 500px;
+    min-height: 600px;
+    min-height: clamp(580px, 78svh, 720px);
   }
   .viewport-shell .scene {
     top: 132px;
