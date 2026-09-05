@@ -114,12 +114,11 @@ export default function Home() {
               aria-live="polite"
               aria-atomic="true"
             >
-              {status.master && (
-                <>
-                  <span>MASTER</span>
-                  <p lang="en">{status.master.en}</p>
-                </>
-              )}
+              <span hidden={!status.master}>MASTER</span>
+              <p lang="en" hidden={!status.master}>
+                {status.master?.en}
+                <span data-master-gesture aria-hidden="true" />
+              </p>
             </div>
             {!loaded && (
               <div className="loading">{error || 'Lighting the lanterns…'}</div>

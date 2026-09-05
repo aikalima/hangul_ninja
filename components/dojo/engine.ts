@@ -202,7 +202,11 @@ export function createDojo(
   const lesson = new FlowLesson();
   const audio = new DojoAudio();
   const effects = createEffects(scene, lessonRoot);
-  const celebration = createCelebration(lessonRoot);
+  const celebration = createCelebration(
+    lessonRoot,
+    host.parentElement?.querySelector<HTMLElement>('[data-master-gesture]') ??
+      null,
+  );
   let lastStatus = '',
     demoStart = 0,
     disposed = false;
@@ -277,6 +281,10 @@ export function createDojo(
         } else line = next;
       }
       sub.fillText(line, 512, y);
+      celebration.position(
+        ((sub.measureText(line).width / 2 + 52) * 1.9) / 1024,
+        0.92 + ((112 - y + 10) * 1.9) / 1024,
+      );
     }
     subtitle.texture.needsUpdate = true;
     const c = feedback.ctx;
@@ -703,7 +711,11 @@ export function createDojo(
     audio.listener(listenerPosition, listenerForward, listenerUp);
     audio.tick(lesson.progress / 100);
     effects.update(dt, elapsed, true, lesson.progress);
-    celebration.update(dt);
+    celebration.update(
+      dt,
+      renderer.xr.isPresenting,
+      masterLine?.id === 'success' || masterLine?.id === 'sound-success',
+    );
     warm.intensity =
       9 + Math.sin(elapsed * 1.6) * 0.6 + Math.min(swordSpeed, 5) * 0.2;
     lanternMat.emissiveIntensity = 0.8 + Math.sin(elapsed * 2.1) * 0.1;

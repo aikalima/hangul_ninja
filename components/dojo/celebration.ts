@@ -8,10 +8,12 @@ const STYLES = [
 ];
 
 // A canvas-backed mascot works in both eyes in WebXR, without DOM overlays.
-export function createCelebration(root: THREE.Group) {
+export function createCelebration(root: THREE.Group, slot: HTMLElement | null) {
   const canvas = document.createElement('canvas');
   canvas.width = 768;
   canvas.height = 768;
+  canvas.hidden = true;
+  slot?.appendChild(canvas);
   const c = canvas.getContext('2d')!;
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -21,7 +23,7 @@ export function createCelebration(root: THREE.Group) {
     depthWrite: false,
   });
   const sprite = new THREE.Sprite(material);
-  sprite.position.set(0, 0.1, 0.18);
+  sprite.position.set(0, 0.92, 0.055);
   sprite.visible = false;
   root.add(sprite);
   let age = 4;
@@ -98,33 +100,6 @@ export function createCelebration(root: THREE.Group) {
   function draw(t: number) {
     c.clearRect(0, 0, 768, 768);
     const bob = Math.sin(t * 4) * 5;
-    oval(384, 385, 272, 272, '#142927e8');
-    c.strokeStyle = '#d9b97888';
-    c.lineWidth = 3;
-    c.beginPath();
-    c.arc(384, 385, 271, 0, Math.PI * 2);
-    c.stroke();
-    for (let i = 0; i < 8; i++) {
-      const a = (i * Math.PI) / 4 + t * 0.13;
-      const x = 384 + Math.cos(a) * 245,
-        y = 385 + Math.sin(a) * 245;
-      stroke(
-        [
-          [x - 5, y],
-          [x + 5, y],
-        ],
-        '#f6d58c',
-        3,
-      );
-      stroke(
-        [
-          [x, y - 5],
-          [x, y + 5],
-        ],
-        '#f6d58c',
-        3,
-      );
-    }
     c.save();
     c.translate(0, bob);
     // Shoulders, robe, crossed lapels and gold belt.
@@ -339,10 +314,6 @@ export function createCelebration(root: THREE.Group) {
         );
     }
     c.restore();
-    c.textAlign = 'center';
-    c.fillStyle = '#f5ddb0';
-    c.font = '600 25px Arial';
-    c.fillText(STYLES[style], 384, 626);
     texture.needsUpdate = true;
   }
   return {
@@ -350,29 +321,31 @@ export function createCelebration(root: THREE.Group) {
       style = next;
       next = (next + 1) % STYLES.length;
       age = 0;
-      sprite.visible = true;
+      canvas.hidden = false;
     },
     reset() {
       age = 4;
       sprite.visible = false;
+      canvas.hidden = true;
     },
-    update(dt: number) {
-      if (age >= 3) return;
+    position(x: number, y: number) {
+      sprite.position.set(x, y, 0.055);
+    },
+    update(dt: number, vr: boolean, active: boolean) {
       age += dt;
-      if (age >= 3) {
-        sprite.visible = false;
-        return;
-      }
-      const enter = Math.min(1, age / 0.28);
-      const exit = Math.max(0, (age - 2.45) / 0.55);
-      sprite.scale.setScalar(
-        (0.75 + 0.35 * (1 - Math.pow(1 - enter, 3))) * (1 - 0.18 * exit),
-      );
-      sprite.position.y = 0.1 + exit * 0.12;
+      const visible = age < 2 && active;
+      sprite.visible = visible && vr;
+      canvas.hidden = !visible || vr;
+      if (!visible) return;
+      const enter = Math.min(1, age / 0.2);
+      const exit = Math.max(0, (age - 1.6) / 0.4);
+      sprite.scale.setScalar(0.19);
       material.opacity = enter * (1 - exit);
+      canvas.style.opacity = String(material.opacity);
       draw(age);
     },
     dispose() {
+      canvas.remove();
       root.remove(sprite);
       material.dispose();
       texture.dispose();
