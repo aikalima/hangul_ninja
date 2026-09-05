@@ -61,6 +61,67 @@ npm run dev -- --host 0.0.0.0
 
 This enables network access for desktop previewing. It does not provide the HTTPS connection needed for immersive VR on a headset.
 
+## Docker and Google Cloud Run
+
+The Docker image builds a Node version of the game and runs Vinext’s production HTTP server as an unprivileged user. It listens on `0.0.0.0` and the `PORT` environment variable (8080 by default). Cloud Run provides the HTTPS endpoint required by Quest Browser.
+
+The Docker build sets `HANGUL_DEPLOY_TARGET=node` to omit the Sites and Cloudflare runtime plugins. It includes the game and bundled audio, but does **not** include the hosted Sites sign-in layer. The existing `npm run build` / `npm start` workflow continues to target Sites/Cloudflare.
+
+### Build and test the container
+
+Start Docker Desktop (or another Docker engine), then run from the repository root:
+
+```sh
+docker build --platform linux/amd64 -t hangul-ninja:cloud-run .
+docker run --rm --name hangul-ninja -p 8080:8080 -e PORT=8080 hangul-ninja:cloud-run
+```
+
+Open **http://localhost:8080/** for the desktop preview. The explicit platform also produces a Cloud Run-compatible image when building on an Apple Silicon Mac. Stop the container with Ctrl+C, or run `docker stop hangul-ninja` in another terminal.
+
+### Deploy to project `dev-copilot`
+
+These commands deploy a new Cloud Run service named `hangul-ninja` in `us-central1`. Change the region if you prefer another location. The project must have billing enabled, and your Google account must have permission to build and deploy Cloud Run services.
+
+Authenticate and enable the required APIs:
+
+```sh
+gcloud auth login
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project=dev-copilot
+```
+
+Build and deploy directly from this directory; Cloud Build uses the included Dockerfile, so no local image push is necessary:
+
+```sh
+gcloud run deploy hangul-ninja \
+  --project=dev-copilot \
+  --region=us-central1 \
+  --source=. \
+  --port=8080 \
+  --cpu=1 \
+  --memory=512Mi \
+  --min-instances=0 \
+  --max-instances=2 \
+  --no-allow-unauthenticated
+```
+
+This command keeps the service private using Cloud Run IAM. It does not create an in-game login page. For a private desktop smoke test, run:
+
+```sh
+gcloud run services proxy hangul-ninja --project=dev-copilot --region=us-central1 --port=8080
+```
+
+Then open **http://localhost:8080/**. Direct access from Quest Browser needs a browser-compatible authentication solution or public access. If you want **anyone with the URL** to play, replace `--no-allow-unauthenticated` with `--allow-unauthenticated` in the deployment command. Organization policy may restrict public access.
+
+Find the deployed HTTPS URL:
+
+```sh
+gcloud run services describe hangul-ninja --project=dev-copilot --region=us-central1 --format='value(status.url)'
+```
+
+Subsequent deployments use the same `gcloud run deploy` command. Cloud Build, Artifact Registry, and Cloud Run can incur charges; scaling to zero does not eliminate build or image-storage costs.
+
+If deployment reports an IAM error, have your project administrator check the deployer’s Cloud Run Source Developer, Service Usage Consumer, and Service Account User permissions, and the build service account’s Cloud Run Builder role. See Google’s [source deployment instructions](https://docs.cloud.google.com/run/docs/deploying-source-code) and [container requirements](https://docs.cloud.google.com/run/docs/container-contract).
+
 ## Play on desktop
 
 1. Select **Begin Level 1**.

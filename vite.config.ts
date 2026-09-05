@@ -35,6 +35,14 @@ const localBindingConfig = {
 };
 
 export default defineConfig(async () => {
+  // Cloud Run uses a Node HTTP server, without Sites or Worker bindings.
+  if (process.env.HANGUL_DEPLOY_TARGET === 'node') {
+    return {
+      css: { postcss: { plugins: [tailwindcss()] } },
+      plugins: [vinext()],
+    };
+  }
+
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= 'false';
