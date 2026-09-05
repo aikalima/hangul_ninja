@@ -48,13 +48,9 @@ The dojo is now a complete 9.4 × 11 m timber room inspired by the supplied illu
 
 Seeded canvas textures provide timber grain, knots, woven fibers, and paper variation, with roughness and subtle bump mapping. Directional daylight casts window and structure shadows using a single static 2048px shadow map; environment geometry is merged by material and shadow behavior. Textures and the shadow map are released on scene cleanup. Physical Quest performance and the new lighting still need device validation.
 
-## First-person fighters
+## Katana-only view
 
-Three cosmetic presets are selectable before or after desktop practice: Onyx (fitted charcoal sleeves and crimson wraps), Cloud (wide ivory sleeves and jade sash), and Ember (rust cloth and brass guards). Selection updates gloves, cuffs, sleeves, lapels, sash, and robe proportions together. A Show arms & outfit checkbox hides the cosmetic body without affecting input or tracing.
-
-In Quest, hand meshes use each controller's grip pose and handedness. Shoulder, elbow, and torso placement is inferred from the headset and hands, not full-body tracking or measured anatomy. The torso follows head position and heading; no head mesh obstructs vision. Desktop uses a closer 58-degree camera and sword-linked hand with a resting offhand. These poses need headset checks for unusual arm reaches and clipping. The sword tip and scoring logic remain unchanged.
-
-Visual research used the supplied Google query and matching image results for anime sword POVs (gloves, wrapped grips, sleeves, and sashes). Presets and meshes are original; no third-party character art is bundled.
+Desktop and Quest display only the katana. In Quest, the weapon is attached directly to each controller grip pose. Arms, hands, clothing, and their selection controls have been removed.
 
 ## Korean master voice
 
@@ -62,10 +58,8 @@ Bundled PCM WAV voice clips pronounce 기역 when practice starts and 잘했다.
 
 Clips were synthesized locally with the installed Korean Yuna voice. No browser Korean voice installation or runtime speech service is required. Playback starts on a practice interaction, consistent with browser autoplay restrictions; a blocked or failed playback shows a replay hint. Voice playback pauses on hidden sessions and is cleaned up on disposal. Tests validate cue decisions and WAV assets; listening quality and immersive playback still need Quest validation.
 
-## Katana and arm refinement
+## Katana refinement
 
 The weapon is a curved, tapered katana with a diamond-section blade, subtle temper line, oval iron guard, brass fittings, and diamond-pattern handle wrap. Shared blade-tip landmarks drive both scoring and the 6 cm tip-only trail. Desktop placement compensates for the curve, keeping the actual rendered tip on the pointer's tracing position.
-
-Hands use rounded palms, curved finger segments, knuckles, and a wrapping thumb. Sleeves have shaped profiles; wrist guards are open plates. Elbows use a two-segment bend with a stable outward/downward pole while preserving controller hand positions. Arm lengths still adapt to uncalibrated reach; this remains a cosmetic estimated avatar, requiring headset clipping/comfort checks.
 
 Precise mode has been removed from the UI, engine, recognition code, and instructions. All practice uses the two-cut flow lesson.

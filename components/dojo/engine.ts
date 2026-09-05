@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import { buildEnvironment } from './environment';
-import { createAvatar } from './avatar';
 import { createKatana, KATANA_TIP, KATANA_TRAIL_INNER } from './katana';
-import type { FighterId } from '@/lib/fighters';
 import { PATH, FlowLesson, type TraceState } from '@/lib/tracing';
 import { DojoAudio } from './audio';
 import { MasterVoice } from './voice';
@@ -30,8 +28,6 @@ export type DojoAPI = {
   pronounce: () => void;
   setMusic: (v: boolean) => void;
   setVolume: (v: number) => void;
-  setFighter: (id: FighterId) => void;
-  showBody: (visible: boolean) => void;
   dispose: () => void;
 };
 
@@ -362,7 +358,6 @@ export function createDojo(
   }
   const desktopSword = createKatana();
   scene.add(desktopSword);
-  const avatar = createAvatar(scene);
   const controllers = [
     renderer.xr.getController(0),
     renderer.xr.getController(1),
@@ -700,14 +695,6 @@ export function createDojo(
     view.getWorldPosition(listenerPosition);
     view.getWorldDirection(listenerForward);
     listenerUp.set(0, 1, 0).transformDirection(view.matrixWorld);
-    avatar.update(
-      view,
-      desktopSword,
-      grips,
-      controllers.map((c) => c.userData.source as XRInputSource | undefined),
-      renderer.xr.isPresenting,
-      elapsed,
-    );
     audio.listener(listenerPosition, listenerForward, listenerUp);
     audio.tick(lesson.progress / 100);
     effects.update(dt, elapsed, true, lesson.progress);
@@ -741,12 +728,6 @@ export function createDojo(
   report();
   return {
     reset,
-    setFighter(id) {
-      avatar.select(id);
-    },
-    showBody(visible) {
-      avatar.show(visible);
-    },
     demonstrate() {
       reset();
       demoStart = Math.max(0.001, elapsed);
