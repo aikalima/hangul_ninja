@@ -11,6 +11,7 @@ import {
   type PronunciationMode,
   type VoiceLine,
 } from '@/lib/voice-lines';
+import { createCelebration } from './celebration';
 import { createEffects } from './effects';
 
 export type DojoStatus = {
@@ -201,6 +202,7 @@ export function createDojo(
   const lesson = new FlowLesson();
   const audio = new DojoAudio();
   const effects = createEffects(scene, lessonRoot);
+  const celebration = createCelebration(lessonRoot);
   let lastStatus = '',
     demoStart = 0,
     disposed = false;
@@ -314,7 +316,10 @@ export function createDojo(
       hitPosition.set(0.45, complete ? -0.45 : 0.45, 0);
       lessonRoot.localToWorld(hitPosition);
       audio.impact(hitPosition, complete);
-      if (complete) voice.success();
+      if (complete) {
+        voice.success();
+        celebration.play();
+      }
       effects.cut(hitPosition, complete);
       const source =
         activeController >= 0
@@ -335,6 +340,7 @@ export function createDojo(
     demoStart = 0;
     lesson.reset();
     effects.reset();
+    celebration.reset();
     tipValid = false;
     audio.unlock();
     voice.intro(true);
@@ -697,6 +703,7 @@ export function createDojo(
     audio.listener(listenerPosition, listenerForward, listenerUp);
     audio.tick(lesson.progress / 100);
     effects.update(dt, elapsed, true, lesson.progress);
+    celebration.update(dt);
     warm.intensity =
       9 + Math.sin(elapsed * 1.6) * 0.6 + Math.min(swordSpeed, 5) * 0.2;
     lanternMat.emissiveIntensity = 0.8 + Math.sin(elapsed * 2.1) * 0.1;
@@ -798,6 +805,7 @@ export function createDojo(
       resize.disconnect();
       void renderer.xr.getSession()?.end();
       voice.dispose();
+      celebration.dispose();
       audio.dispose();
       environment.dispose();
       document.removeEventListener('visibilitychange', visibilityChanged);

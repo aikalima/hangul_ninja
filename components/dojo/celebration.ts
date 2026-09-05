@@ -1,0 +1,381 @@
+import * as THREE from 'three';
+
+const STYLES = [
+  'FINGER HEART',
+  'OVERHEAD HEART',
+  'CHEEK OK',
+  'THUMBS UP + BOW',
+];
+
+// A canvas-backed mascot works in both eyes in WebXR, without DOM overlays.
+export function createCelebration(root: THREE.Group) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 768;
+  canvas.height = 768;
+  const c = canvas.getContext('2d')!;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(material);
+  sprite.position.set(0, 0.1, 0.18);
+  sprite.visible = false;
+  root.add(sprite);
+  let age = 4;
+  let next = 0;
+  let style = 0;
+  const skin = '#f1ba91';
+  function stroke(points: number[][], color: string, width: number) {
+    c.beginPath();
+    points.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
+    c.strokeStyle = color;
+    c.lineWidth = width;
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    c.stroke();
+  }
+  function oval(x: number, y: number, rx: number, ry: number, color: string) {
+    c.beginPath();
+    c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    c.fillStyle = color;
+    c.fill();
+  }
+  function heart(x: number, y: number, size: number) {
+    c.save();
+    c.translate(x, y);
+    c.scale(size, size);
+    c.beginPath();
+    c.moveTo(0, 0.9);
+    c.bezierCurveTo(-1.7, -0.2, -0.7, -1.3, 0, -0.5);
+    c.bezierCurveTo(0.7, -1.3, 1.7, -0.2, 0, 0.9);
+    c.fillStyle = '#ff8fab';
+    c.fill();
+    c.restore();
+  }
+  function arm(points: number[][]) {
+    stroke(points, '#d7b578', 57);
+    stroke(points, '#314e4d', 45);
+  }
+  function ok(x: number, y: number, flip: number) {
+    c.save();
+    c.translate(x, y);
+    c.scale(flip, 1);
+    oval(0, 14, 27, 29, skin);
+    stroke(
+      [
+        [2, 6],
+        [0, -55],
+      ],
+      skin,
+      13,
+    );
+    stroke(
+      [
+        [15, 8],
+        [22, -51],
+      ],
+      skin,
+      13,
+    );
+    stroke(
+      [
+        [25, 17],
+        [42, -33],
+      ],
+      skin,
+      12,
+    );
+    c.beginPath();
+    c.arc(-15, -7, 18, 0, Math.PI * 2);
+    c.strokeStyle = skin;
+    c.lineWidth = 13;
+    c.stroke();
+    c.restore();
+  }
+  function draw(t: number) {
+    c.clearRect(0, 0, 768, 768);
+    const bob = Math.sin(t * 4) * 5;
+    oval(384, 385, 272, 272, '#142927e8');
+    c.strokeStyle = '#d9b97888';
+    c.lineWidth = 3;
+    c.beginPath();
+    c.arc(384, 385, 271, 0, Math.PI * 2);
+    c.stroke();
+    for (let i = 0; i < 8; i++) {
+      const a = (i * Math.PI) / 4 + t * 0.13;
+      const x = 384 + Math.cos(a) * 245,
+        y = 385 + Math.sin(a) * 245;
+      stroke(
+        [
+          [x - 5, y],
+          [x + 5, y],
+        ],
+        '#f6d58c',
+        3,
+      );
+      stroke(
+        [
+          [x, y - 5],
+          [x, y + 5],
+        ],
+        '#f6d58c',
+        3,
+      );
+    }
+    c.save();
+    c.translate(0, bob);
+    // Shoulders, robe, crossed lapels and gold belt.
+    oval(384, 510, 101, 93, '#314e4d');
+    stroke(
+      [
+        [335, 454],
+        [402, 539],
+        [420, 575],
+      ],
+      '#d7b578',
+      12,
+    );
+    stroke(
+      [
+        [430, 455],
+        [374, 528],
+      ],
+      '#f0dec0',
+      10,
+    );
+    stroke(
+      [
+        [300, 561],
+        [468, 561],
+      ],
+      '#d7b578',
+      19,
+    );
+    if (style === 1) {
+      arm([
+        [311, 466],
+        [239, 366],
+        [265, 232],
+        [341, 204],
+      ]);
+      arm([
+        [457, 466],
+        [529, 366],
+        [503, 232],
+        [427, 204],
+      ]);
+      stroke(
+        [
+          [341, 204],
+          [367, 215],
+          [384, 239],
+        ],
+        skin,
+        29,
+      );
+      stroke(
+        [
+          [427, 204],
+          [401, 215],
+          [384, 239],
+        ],
+        skin,
+        29,
+      );
+      heart(384, 190, 28 + Math.sin(t * 5) * 3);
+    } else if (style === 2) {
+      arm([
+        [306, 472],
+        [249, 443],
+        [265, 388],
+      ]);
+      arm([
+        [462, 472],
+        [519, 443],
+        [503, 388],
+      ]);
+    } else {
+      arm([
+        [307, 476],
+        [264, 507],
+        [292, 532],
+      ]);
+      arm([
+        [462, 478],
+        [520, 463],
+        [509, 386],
+      ]);
+      oval(292, 532, 27, 22, skin);
+    }
+    // A gentle bow is the fourth celebration's distinctive motion.
+    const bow =
+      style === 3
+        ? Math.sin(Math.min(1, Math.max(0, (t - 0.35) / 1.3)) * Math.PI)
+        : 0;
+    c.save();
+    c.translate(384, 382 + bow * 34);
+    c.scale(1, 1 - bow * 0.16);
+    oval(0, -8, 77, 88, '#203b3a');
+    oval(0, -4, 65, 68, skin);
+    oval(0, -57, 77, 34, '#e8e0c7');
+    stroke(
+      [
+        [-65, -46],
+        [65, -46],
+      ],
+      '#d7b578',
+      14,
+    );
+    // Smiling closed eyes and eyebrows.
+    stroke(
+      [
+        [-40, -12],
+        [-28, -18],
+        [-16, -12],
+      ],
+      '#313837',
+      6,
+    );
+    stroke(
+      [
+        [16, -12],
+        [28, -18],
+        [40, -12],
+      ],
+      '#313837',
+      6,
+    );
+    stroke(
+      [
+        [-44, -30],
+        [-18, -33],
+      ],
+      '#f8eed6',
+      9,
+    );
+    stroke(
+      [
+        [18, -33],
+        [44, -30],
+      ],
+      '#f8eed6',
+      9,
+    );
+    c.beginPath();
+    c.arc(0, 12, 22, 0.2, Math.PI - 0.2);
+    c.strokeStyle = '#824c3c';
+    c.lineWidth = 5;
+    c.stroke();
+    oval(-43, 12, 12, 7, '#e89383');
+    oval(43, 12, 12, 7, '#e89383');
+    // Small master's beard.
+    c.beginPath();
+    c.moveTo(-27, 45);
+    c.quadraticCurveTo(0, 108, 27, 45);
+    c.fillStyle = '#f8eed6';
+    c.fill();
+    c.restore();
+    if (style === 0) {
+      // Folded fingers, with thumb crossing the upright index finger.
+      oval(508, 390, 30, 35, skin);
+      stroke(
+        [
+          [505, 390],
+          [489, 331],
+        ],
+        '#d79674',
+        18,
+      );
+      stroke(
+        [
+          [489, 331],
+          [500, 366],
+        ],
+        skin,
+        15,
+      );
+      stroke(
+        [
+          [485, 387],
+          [520, 345],
+        ],
+        skin,
+        19,
+      );
+      stroke(
+        [
+          [499, 406],
+          [516, 408],
+        ],
+        '#d79674',
+        3,
+      );
+      heart(506, 301 - Math.sin(t * 4) * 5, 24 + Math.sin(t * 5) * 3);
+    } else if (style === 2) {
+      ok(265, 361, 1);
+      ok(503, 361, -1);
+    } else if (style === 3) {
+      oval(513, 390, 32, 34, skin);
+      stroke(
+        [
+          [491, 392],
+          [480, 367],
+          [487, 325],
+        ],
+        skin,
+        21,
+      );
+      for (let i = 0; i < 3; i++)
+        stroke(
+          [
+            [514, 374 + i * 14],
+            [534, 374 + i * 14],
+          ],
+          '#d79674',
+          3,
+        );
+    }
+    c.restore();
+    c.textAlign = 'center';
+    c.fillStyle = '#f5ddb0';
+    c.font = '600 25px Arial';
+    c.fillText(STYLES[style], 384, 626);
+    texture.needsUpdate = true;
+  }
+  return {
+    play() {
+      style = next;
+      next = (next + 1) % STYLES.length;
+      age = 0;
+      sprite.visible = true;
+    },
+    reset() {
+      age = 4;
+      sprite.visible = false;
+    },
+    update(dt: number) {
+      if (age >= 3) return;
+      age += dt;
+      if (age >= 3) {
+        sprite.visible = false;
+        return;
+      }
+      const enter = Math.min(1, age / 0.28);
+      const exit = Math.max(0, (age - 2.45) / 0.55);
+      sprite.scale.setScalar(
+        (0.75 + 0.35 * (1 - Math.pow(1 - enter, 3))) * (1 - 0.18 * exit),
+      );
+      sprite.position.y = 0.1 + exit * 0.12;
+      material.opacity = enter * (1 - exit);
+      draw(age);
+    },
+    dispose() {
+      root.remove(sprite);
+      material.dispose();
+      texture.dispose();
+    },
+  };
+}

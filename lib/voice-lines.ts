@@ -2,9 +2,9 @@ export const VOICE_LINES = {
   intro: { id: 'intro', file: 'giyeok', ko: '기역.', en: 'Giyeok — ㄱ.' },
   success: {
     id: 'success',
-    file: 'success',
-    ko: '잘했다. 기역!',
-    en: 'Well done. Giyeok!',
+    file: 'giyeok',
+    ko: '기역.',
+    en: 'Giyeok — ㄱ.',
   },
   soundIntro: {
     id: 'sound-intro',
@@ -14,9 +14,9 @@ export const VOICE_LINES = {
   },
   soundSuccess: {
     id: 'sound-success',
-    file: 'success-geu',
-    ko: '잘했다. 그!',
-    en: 'Well done. ㄱ sound in 그 (geu).',
+    file: 'geu',
+    ko: '그.',
+    en: 'ㄱ sound in 그 (geu).',
   },
   focus: {
     id: 'focus',

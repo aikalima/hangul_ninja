@@ -53,3 +53,12 @@ void test('pronunciation choice selects sound or name for both lesson cues', () 
     );
   }
 });
+
+void test('success repeats pronunciation without spoken praise', () => {
+  for (const mode of ['sound', 'name'] as const) {
+    const line = pronunciationLine(mode, 'success');
+    assert.equal(line.file, pronunciationLine(mode, 'intro').file);
+    assert.doesNotMatch(line.ko, /잘했다/);
+    assert.doesNotMatch(line.en, /well done/i);
+  }
+});
