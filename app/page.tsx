@@ -71,13 +71,8 @@ export default function Home() {
   const vowel = VOWELS[index];
   const stage = status.stage ?? 'intro';
   const finished = stage === 'level-complete';
-  const reviewing = stage.startsWith('review-');
-  const timed = [
-    'review-countdown',
-    'review-active',
-    'review-between',
-  ].includes(stage);
-  const reviewSeconds = status.reviewSeconds ?? 3;
+  const reviewing = false;
+  const timed = false;
   const doneCount =
     finished || reviewing
       ? 6
@@ -117,69 +112,28 @@ export default function Home() {
         <div className="dojo-layout">
           <section className="viewport-shell" aria-label="Interactive 3D dojo">
             <div ref={host} className="scene" />
-            {(reviewing || finished) && (
-              <section
-                className={`review-overlay ${stage === 'review-active' || stage === 'review-between' ? 'running' : ''}`}
-                aria-label="Timed review"
-              >
-                <span className="eyebrow">
-                  {finished ? 'REVIEW PASSED' : 'TIMED REVIEW · LEVEL 1'}
-                </span>
-                <h2>
-                  {finished
-                    ? 'Level 1 complete!'
-                    : stage === 'review-countdown'
-                      ? Math.ceil(status.reviewRemaining ?? 3)
-                      : stage === 'review-active'
-                        ? `${(status.reviewRemaining ?? 0).toFixed(1)}s`
-                        : stage === 'review-between'
-                          ? 'Next…'
-                          : stage === 'review-failed'
-                            ? 'Time’s up!'
-                            : 'Put your training to the test.'}
-                </h2>
+            {finished && (
+              <section className="review-overlay" aria-label="Level complete">
+                <span className="eyebrow">LEVEL 1 COMPLETE</span>
+                <h2>Ready for Level 2</h2>
                 <p>
-                  {status.reviewIndex ?? 0} / {status.reviewTotal ?? 6}{' '}
-                  characters passed
+                  {status.nextLevelConfirmed
+                    ? 'You’re all set. Level 2 is coming soon.'
+                    : 'Six vowels mastered. Confirm when you’re ready for the next level.'}
                 </p>
-                {!timed && (
-                  <>
-                    <p>
-                      {finished
-                        ? 'You’re ready for Level 2. Coming soon.'
-                        : `Trace every character before time runs out. ${reviewSeconds} seconds each, shuffled order.`}
-                    </p>
-                    {!finished && (
-                      <label>
-                        Seconds per character{' '}
-                        <input
-                          aria-label="Seconds per review character"
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={reviewSeconds}
-                          onChange={(e) =>
-                            api.current?.setReviewSeconds(
-                              Number(e.target.value) || 3,
-                            )
-                          }
-                        />
-                      </label>
-                    )}
-                    <button
-                      className="primary-button"
-                      disabled={!loaded}
-                      onClick={advance}
-                    >
-                      {finished
-                        ? 'Replay Level 1'
-                        : stage === 'review-failed'
-                          ? 'Retry test'
-                          : 'Begin test'}{' '}
-                      <ArrowRight size={18} />
-                    </button>
-                  </>
-                )}
+                <button
+                  className="primary-button"
+                  disabled={!loaded || status.nextLevelConfirmed}
+                  onClick={advance}
+                >
+                  {status.nextLevelConfirmed
+                    ? 'Confirmed · Coming soon'
+                    : 'I’m ready'}{' '}
+                  <ArrowRight size={18} />
+                </button>
+                <button className="secondary-button" onClick={reset}>
+                  Practice Level 1 again
+                </button>
               </section>
             )}
             <div className="scene-top">
@@ -191,7 +145,7 @@ export default function Home() {
               </span>
             </div>
             <div
-              className={`master-subtitle ${reviewing || finished ? 'review-subtitle' : ''}`}
+              className="master-subtitle"
               aria-live="polite"
               aria-atomic="true"
             >
@@ -265,7 +219,7 @@ export default function Home() {
             </div>
             <p className="level-status" aria-live="polite">
               {finished
-                ? 'Review passed · Level 1 complete. Level 2 coming soon.'
+                ? 'Level 1 complete · Ready for Level 2.'
                 : reviewing
                   ? 'Timed review · Pass every character to finish the level.'
                   : stage === 'intro'
@@ -546,18 +500,9 @@ export default function Home() {
           Enter VR and press a trigger to begin the level. Follow the numbered
           cuts with the katana tip. After completing a character, release the
           trigger. The next character appears automatically after three seconds.
-          After the sixth vowel, press the trigger to start the timed review.
-          Pass every character before Level 1 is complete. Squeeze the grip to
-          recenter the guide.
-        </p>
-        <h3>Timed review</h3>
-        <p>
-          After the lesson, start a shuffled review. Each character has three
-          seconds by default; change this to 1–10 seconds before starting. Trace
-          all strokes before the timer expires. All characters must pass to
-          finish the level. A timeout requires a new attempt. Hiding the app
-          interrupts the attempt. Level 1 reviews its six vowels; future levels
-          include the preceding level too.
+          After the sixth vowel, the master congratulates you. Confirm in the
+          center panel or press the trigger when ready for the next level.
+          Squeeze the grip to recenter the guide.
         </p>
         <h3>The master</h3>
         <p>

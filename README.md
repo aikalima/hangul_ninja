@@ -1,3 +1,7 @@
+## Current level ending
+
+Timed reviews are temporarily disabled. Finishing the sixth vowel completes Level 1, plays Korean congratulations with an English translation above the dojo, and shows a centered Ready for Level 2 confirmation. Confirmation records readiness but does not start unavailable Level 2. Replay is available separately. The review implementation is retained for possible restoration.
+
 ## Timed review checkpoints
 
 After completing a level’s practice, a shuffled review is required before the level is marked complete. The pool contains every character in the current and immediately previous level, without duplicates. Only Level 1 is playable today, so its review uses its six vowels. The generic pool builder is tested for later-level combinations; later tracing lessons remain upcoming.

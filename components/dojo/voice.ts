@@ -120,11 +120,15 @@ export class MasterVoice {
   replay() {
     this.speak(this.characterLine('intro'));
   }
-  success(progress: number) {
+  success(progress: number, levelFinished = false) {
     if (progress < 100 || this.completed) return;
     this.completed = true;
     const line = this.characterLine('success');
-    const praise = this.enabled ? encouragementFor(++this.completions) : null;
+    const praise = this.enabled
+      ? levelFinished
+        ? VOICE_LINES.levelComplete
+        : encouragementFor(++this.completions)
+      : null;
     this.completionTimer = setTimeout(() => {
       this.completionTimer = undefined;
       this.speak(line);
