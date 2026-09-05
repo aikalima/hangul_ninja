@@ -1,3 +1,4 @@
+import { MASTER_WELCOME } from '@/lib/voice-lines';
 import * as THREE from 'three';
 import { buildEnvironment } from './environment';
 import { createKatana, KATANA_TIP, KATANA_TRAIL_INNER } from './katana';
