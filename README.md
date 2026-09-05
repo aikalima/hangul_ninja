@@ -1,20 +1,12 @@
-## Current level ending
+# Hangul Ninja · Six-level course
 
-Timed reviews are temporarily disabled. Finishing the sixth vowel completes Level 1, plays Korean congratulations with an English translation above the dojo, and shows a centered Ready for Level 2 confirmation. Confirmation records readiness but does not start unavailable Level 2. Replay is available separately. The review implementation is retained for possible restoration.
+All 40 characters are playable, in the requested order: basic vowels (6), basic consonants (9), Y vowels (4), aspirated consonants (5), tense consonants (5), and compound vowels (11).
 
-## Timed review checkpoints
+Complete each character with ordered katana flow cuts. Pronunciation plays at the beginning and 500 ms after completion. The next character appears after three seconds. The final character ends the level with Korean congratulations, one English translation above the dojo, and a centered confirmation to start the next level. Level 6 finishes the course and offers replay from Level 1. Progress is session-local. Timed reviews remain disabled.
 
-After completing a level’s practice, a shuffled review is required before the level is marked complete. The pool contains every character in the current and immediately previous level, without duplicates. Only Level 1 is playable today, so its review uses its six vowels. The generic pool builder is tested for later-level combinations; later tracing lessons remain upcoming.
+Circles are split into four curved cuts, and corners into separate cuts: game cut counts are not handwriting stroke counts. Consonants offer sound/name playback; sounds use a short syllable with a supporting vowel, since consonants cannot all be pronounced naturally in isolation. ㅇ is silent initially and ng finally, demonstrated with 응. Korean PCM voice clips are bundled locally. Music defaults off.
 
-A three-second preparation countdown precedes the first character. Each character gets three seconds by default (configurable from 1–10 before the round). Successful characters advance automatically immediately on the next rendered frame, with no waiting period. Every item must be completed before its deadline; a miss ends the attempt, and retry reshuffles the entire pool. Backgrounding or leaving VR interrupts the attempt. Timers use wall-clock deadlines, and completion is checked against the deadline, including between render frames. Review state and passes are session-local. Level 2 remains unavailable until its lesson is implemented.
-
-# Hangul Ninja · Level 1
-
-The playable curriculum now begins with six basic vowels: ㅏ a, ㅓ eo, ㅗ o, ㅜ u, ㅡ eu, ㅣ i. A level introduction precedes practice; each completed lesson character advances automatically after three seconds, and the sixth ends on a persistent Level 1 completion state. Replay returns to ㅏ. Progress is session-local.
-
-The six-level roadmap follows the requested order: Basic vowels, Basic consonants, Y vowels, Aspirated consonants, Tense consonants, Compound vowels. Only Level 1 is currently playable; the others are explicitly marked coming soon. The original ㄱ recognition module remains covered by tests for later consonant-level work.
-
-Each vowel is described by ordered independent cuts. The recognizer validates direction, swept coverage, depth and tracking continuity, preserves completed cuts during release, and never draws a connector between separate strokes. The guide, demonstration, pronunciation, feedback and controller progression use the active vowel. Vowels use the same spoken name and sound, so no name/sound selector is shown in Level 1. Music starts off; only the katana is rendered for the player. All six Korean audio clips are bundled locally.
+Curriculum geometry, reverse/shortcut rejection, all 40 sound/name assets, and level boundaries are covered by automated tests. Physical Quest comfort, reach, and audio still require headset testing.
 
 Romanization reference: [National Institute of Korean Language](https://www.korean.go.kr/front_eng/roman/roman_01.do).
 
@@ -76,7 +68,7 @@ Desktop and Quest display only the katana. In Quest, the weapon is attached dire
 
 ## Korean master voice
 
-Bundled PCM WAV voice clips pronounce the active character at the start and after full completion. Every third completion adds a rotating Korean encouragement. Three stern Korean corrections rotate after failed gestures, with a 4.5-second cooldown. Valid recovery between landed flow cuts, tiny clicks, tracking loss, and visibility changes do not trigger scolding. English/Korean captions render in both the sidebar and XR scene. Use Hear ㄱ to replay pronunciation, Master to mute narration, and Volume for the master level. Music ducks while a voice clip plays.
+Bundled PCM WAV voice clips pronounce the active character at the start and after full completion. Every third completion adds a rotating Korean encouragement. Three stern Korean corrections rotate after failed gestures, with a 4.5-second cooldown. Valid recovery between landed flow cuts, tiny clicks, tracking loss, and visibility changes do not trigger scolding. The English translation renders once above the dojo, including inside XR. Use Hear ㄱ to replay pronunciation, Master to mute narration, and Volume for the master level. Music ducks while a voice clip plays.
 
 Clips were synthesized locally with the installed Korean Yuna voice. No browser Korean voice installation or runtime speech service is required. Playback starts on a practice interaction, consistent with browser autoplay restrictions; a blocked or failed playback shows a replay hint. Voice playback pauses on hidden sessions and is cleaned up on disposal. Tests validate cue decisions and WAV assets; listening quality and immersive playback still need Quest validation.
 
@@ -84,4 +76,4 @@ Clips were synthesized locally with the installed Korean Yuna voice. No browser 
 
 The weapon is a curved, tapered katana with a diamond-section blade, subtle temper line, oval iron guard, brass fittings, and diamond-pattern handle wrap. Shared blade-tip landmarks drive both scoring and the 6 cm tip-only trail. Desktop placement compensates for the curve, keeping the actual rendered tip on the pointer's tracing position.
 
-Precise mode has been removed from the UI, engine, recognition code, and instructions. All practice uses the two-cut flow lesson.
+Precise mode has been removed from the UI, engine, recognition code, and instructions. All practice uses flow cuts.

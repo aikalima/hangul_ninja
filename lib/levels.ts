@@ -132,17 +132,19 @@ export class VowelLesson {
       this.release();
       return;
     }
-    const points = this.cuts[this.completedCuts],
-      a = points[0],
-      b = points[20];
+    const points = this.cuts[this.completedCuts];
     const dx = p.x - prev.x,
       dy = p.y - prev.y,
       length = dx * dx + dy * dy;
+    if (length < 1e-8) return;
+    const pointIndex = Math.min(19, this.next % 21);
+    const a = points[pointIndex],
+      b = points[pointIndex + 1];
     const sx = b.x - a.x,
       sy = b.y - a.y,
       along = dx * sx + dy * sy,
       cross = dx * sy - dy * sx;
-    if (along <= 0 || Math.abs(cross) > along * 0.9 || length < 1e-8) return;
+    if (along <= 0 || Math.abs(cross) > along * 1.1) return;
     const end = (this.completedCuts + 1) * 21;
     while (this.next < end) {
       const q = points[this.next % 21];
@@ -150,7 +152,8 @@ export class VowelLesson {
         0,
         Math.min(1, ((q.x - prev.x) * dx + (q.y - prev.y) * dy) / length),
       );
-      if (Math.hypot(q.x - prev.x - t * dx, q.y - prev.y - t * dy) > 0.1) break;
+      if (Math.hypot(q.x - prev.x - t * dx, q.y - prev.y - t * dy) > 0.06)
+        break;
       this.next++;
       this.state = 'tracing';
     }

@@ -12,21 +12,34 @@ export class MasterVoice {
   private pronunciation: PronunciationMode = 'sound';
   private introduced = false;
   private completed = false;
-  private character: { spoken: string; roman: string; glyph: string } | null =
-    null;
-  setCharacter(value: { spoken: string; roman: string; glyph: string }) {
+  private character: {
+    spoken: string;
+    roman: string;
+    glyph: string;
+    file?: string;
+    name?: string;
+    nameFile?: string;
+  } | null = null;
+  setCharacter(value: NonNullable<MasterVoice['character']>) {
     this.pause();
     this.character = value;
   }
   private characterLine(cue: 'intro' | 'success'): VoiceLine {
-    return this.character
-      ? {
-          id: cue,
-          file: 'vowel-' + this.character.roman,
-          ko: this.character.spoken,
-          en: this.character.glyph + ' · ' + this.character.roman,
-        }
-      : pronunciationLine(this.pronunciation, cue);
+    if (!this.character) return pronunciationLine(this.pronunciation, cue);
+    const named = this.pronunciation === 'name';
+    return {
+      id: cue,
+      file:
+        (named ? this.character.nameFile : this.character.file) ??
+        'vowel-' + this.character.roman,
+      ko: (named ? this.character.name : undefined) ?? this.character.spoken,
+      en:
+        this.character.glyph +
+        ' · ' +
+        (named
+          ? (this.character.name ?? this.character.spoken)
+          : this.character.roman),
+    };
   }
   private completions = 0;
   private pendingPraise: VoiceLine | null = null;
@@ -120,13 +133,15 @@ export class MasterVoice {
   replay() {
     this.speak(this.characterLine('intro'));
   }
-  success(progress: number, levelFinished = false) {
+  success(progress: number, levelFinished = false, courseFinished = false) {
     if (progress < 100 || this.completed) return;
     this.completed = true;
     const line = this.characterLine('success');
     const praise = this.enabled
       ? levelFinished
-        ? VOICE_LINES.levelComplete
+        ? courseFinished
+          ? VOICE_LINES.courseComplete
+          : VOICE_LINES.levelComplete
         : encouragementFor(++this.completions)
       : null;
     this.completionTimer = setTimeout(() => {

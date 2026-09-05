@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ArrowDown,
   ArrowRight,
   Check,
   Crosshair,
@@ -19,7 +18,9 @@ import {
   X,
 } from 'lucide-react';
 import { MASTER_WELCOME } from '@/lib/voice-lines';
-import { VOWELS } from '@/lib/levels';
+import { LEVELS } from '@/lib/levels';
+import { CURRICULUM, cutDirection } from '@/lib/curriculum';
+import type { PronunciationMode } from '@/lib/voice-lines';
 import type { DojoAPI, DojoStatus } from '@/components/dojo/engine';
 
 export default function Home() {
@@ -41,6 +42,8 @@ export default function Home() {
   const [sound, setSound] = useState(true);
   const [music, setMusic] = useState(false);
   const [masterVoice, setMasterVoice] = useState(true);
+  const [pronunciation, setPronunciation] =
+    useState<PronunciationMode>('sound');
   const [volume, setVolume] = useState(50);
   const [help, setHelp] = useState(false);
   useEffect(() => {
@@ -68,14 +71,18 @@ export default function Home() {
   }, [help]);
   const reset = () => api.current?.reset();
   const index = status.characterIndex ?? 0;
-  const vowel = VOWELS[index];
+  const levelIndex = status.levelIndex ?? 0;
+  const level = LEVELS[levelIndex];
+  const characters = CURRICULUM[levelIndex];
+  const vowel = characters[index];
+  const courseFinished = levelIndex === LEVELS.length - 1;
   const stage = status.stage ?? 'intro';
   const finished = stage === 'level-complete';
   const reviewing = false;
   const timed = false;
   const doneCount =
     finished || reviewing
-      ? 6
+      ? characters.length
       : index + (stage === 'character-complete' ? 1 : 0);
   const advance = () => api.current?.advance();
   return (
@@ -99,7 +106,7 @@ export default function Home() {
         <div className="page-heading">
           <div>
             <p className="eyebrow">
-              LEVEL 01 <span>/</span> BASIC VOWELS
+              LEVEL {levelIndex + 1} <span>/</span> {level.title.toUpperCase()}
             </p>
             <h1>
               Every stroke is a beginning<span>.</span>
@@ -114,25 +121,27 @@ export default function Home() {
             <div ref={host} className="scene" />
             {finished && (
               <section className="review-overlay" aria-label="Level complete">
-                <span className="eyebrow">LEVEL 1 COMPLETE</span>
-                <h2>Ready for Level 2</h2>
+                <span className="eyebrow">LEVEL {levelIndex + 1} COMPLETE</span>
+                <h2>
+                  {courseFinished
+                    ? 'All six levels complete!'
+                    : `Ready for Level ${levelIndex + 2}`}
+                </h2>
                 <p>
-                  {status.nextLevelConfirmed
-                    ? 'You’re all set. Level 2 is coming soon.'
-                    : 'Six vowels mastered. Confirm when you’re ready for the next level.'}
+                  {courseFinished
+                    ? 'You’ve completed all 40 characters. Return to Level 1 for another round.'
+                    : `${characters.length} characters completed. Next: ${LEVELS[levelIndex + 1].title}. Confirm when you’re ready.`}
                 </p>
                 <button
                   className="primary-button"
-                  disabled={!loaded || status.nextLevelConfirmed}
+                  disabled={!loaded}
                   onClick={advance}
                 >
-                  {status.nextLevelConfirmed
-                    ? 'Confirmed · Coming soon'
-                    : 'I’m ready'}{' '}
+                  {courseFinished ? 'Train again from Level 1' : 'I’m ready'}{' '}
                   <ArrowRight size={18} />
                 </button>
                 <button className="secondary-button" onClick={reset}>
-                  Practice Level 1 again
+                  Practice this level again
                 </button>
               </section>
             )}
@@ -192,14 +201,18 @@ export default function Home() {
           </section>
           <aside className="lesson-panel">
             <div className="lesson-overline">
-              <span>LEVEL 1 · BASIC VOWELS</span>
-              <span className="lesson-number">{index + 1} / 06</span>
+              <span>
+                LEVEL {levelIndex + 1} · {level.title.toUpperCase()}
+              </span>
+              <span className="lesson-number">
+                {index + 1} / {characters.length}
+              </span>
             </div>
             <div
               className="vowel-progress"
-              aria-label={`${doneCount} of 6 lesson characters complete`}
+              aria-label={`${doneCount} of ${characters.length} lesson characters complete`}
             >
-              {VOWELS.map((v, i) => (
+              {characters.map((v, i) => (
                 <span
                   key={v.roman}
                   lang="ko"
@@ -219,12 +232,14 @@ export default function Home() {
             </div>
             <p className="level-status" aria-live="polite">
               {finished
-                ? 'Level 1 complete · Ready for Level 2.'
+                ? courseFinished
+                  ? 'All six levels complete.'
+                  : `Level ${levelIndex + 1} complete · Ready for Level ${levelIndex + 2}.`
                 : reviewing
                   ? 'Timed review · Pass every character to finish the level.'
                   : stage === 'intro'
-                    ? 'Level 1 begins · Six basic vowels'
-                    : `${doneCount} / 6 characters complete`}
+                    ? `Level ${levelIndex + 1} begins · ${characters.length} characters`
+                    : `${doneCount} / ${characters.length} characters complete`}
             </p>
             <div className="character-title">
               <span lang="ko">{vowel.glyph}</span>
@@ -247,11 +262,34 @@ export default function Home() {
                 </p>
               </div>
             </div>
+            {vowel.name !== vowel.spoken && (
+              <fieldset className="pronunciation-choice" disabled={!loaded}>
+                <legend>PRONUNCIATION</legend>
+                <div>
+                  {(['sound', 'name'] as const).map((mode) => (
+                    <label key={mode}>
+                      <input
+                        type="radio"
+                        name="pronunciation"
+                        checked={pronunciation === mode}
+                        onChange={() => {
+                          setPronunciation(mode);
+                          api.current?.setPronunciation(mode);
+                          api.current?.pronounce();
+                        }}
+                      />
+                      {mode === 'sound' ? 'Sound' : 'Letter name'}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
             <p className="lesson-intro">
               {vowel.cuts.length}{' '}
-              {vowel.cuts.length === 1 ? 'flow cut' : 'flow cuts'}. One vowel.
+              {vowel.cuts.length === 1 ? 'flow cut' : 'flow cuts'}. One
+              character.
               <br />
-              Sound and letter name are the same for these vowels.
+              {vowel.note}
             </p>
             <div className="divider" />
             <div className="section-label">
@@ -273,13 +311,13 @@ export default function Home() {
                 <p>Follow each numbered cut in order.</p>
               </div>
               <div className="direction">
-                {vowel.cuts.map((cut, i) =>
-                  cut[20].x > cut[0].x ? (
-                    <ArrowRight key={i} size={18} />
-                  ) : (
-                    <ArrowDown key={i} size={18} />
-                  ),
-                )}
+                <span aria-label="Current cut direction">
+                  {cutDirection(
+                    vowel.cuts[
+                      Math.min(status.cutIndex ?? 0, vowel.cuts.length - 1)
+                    ],
+                  )}
+                </span>
               </div>
             </div>
             <div className="tip">
@@ -334,11 +372,11 @@ export default function Home() {
                   : timed
                     ? 'Review in progress'
                     : finished
-                      ? 'Replay Level 1'
+                      ? 'Replay this level'
                       : stage === 'intro'
-                        ? 'Begin Level 1'
+                        ? `Begin Level ${levelIndex + 1}`
                         : stage === 'character-complete'
-                          ? `Next: ${VOWELS[Math.min(5, index + 1)].glyph} in 3 seconds`
+                          ? `Next: ${characters[Math.min(characters.length - 1, index + 1)].glyph} in 3 seconds`
                           : 'Restart character'}
               <ArrowRight size={18} />
             </button>
@@ -483,26 +521,27 @@ export default function Home() {
         <h2 id="help-title">One stroke at a time.</h2>
         <h3>On desktop</h3>
         <p>
-          Begin Level 1, then hold and drag along each numbered stroke in order.
-          Release between cuts to reposition. Completed strokes stay lit. Use
-          arrow keys while holding Space for keyboard practice. Press R to
-          restart a character.
+          Begin a level, then hold and drag along each numbered cut in order.
+          Release between cuts to reposition. Curves and corners use separate
+          game cuts, rather than handwriting stroke counts. Completed cuts stay
+          lit. Use arrow keys while holding Space for keyboard practice. Press R
+          to restart a character.
         </p>
         <h3>In Meta Quest</h3>
         <p>
           Enter VR and press a trigger to begin the level. Follow the numbered
           cuts with the katana tip. After completing a character, release the
           trigger. The next character appears automatically after three seconds.
-          After the sixth vowel, the master congratulates you. Confirm in the
-          center panel or press the trigger when ready for the next level.
-          Squeeze the grip to recenter the guide.
+          After the last character in each level, the master congratulates you.
+          Confirm in the center panel or press the trigger when ready for the
+          next level. Squeeze the grip to recenter the guide.
         </p>
         <h3>The master</h3>
         <p>
-          Hear the vowel once at the beginning and once at full completion.
+          Hear the character once at the beginning and once at full completion.
           Every third completion adds Korean encouragement with English
-          subtitles. Use Hear {vowel.glyph} to replay or Master to mute. Levels
-          2–6 are upcoming.
+          subtitles. Use Hear {vowel.glyph} to replay or Master to mute. All six
+          levels are available.
         </p>
         <h3>Your katana</h3>
         <p>
