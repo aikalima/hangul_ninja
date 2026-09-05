@@ -33,6 +33,11 @@ export class MasterVoice {
   private lastMistake = -Infinity;
   private mistakeIndex = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
+  private completionTimer: ReturnType<typeof setTimeout> | undefined;
+  private cancelCompletion() {
+    clearTimeout(this.completionTimer);
+    this.completionTimer = undefined;
+  }
   private disposed = false;
   constructor(
     privateLine: (line: VoiceLine | null) => void,
@@ -78,6 +83,7 @@ export class MasterVoice {
   }
   private speak(line: VoiceLine) {
     if (this.disposed) return;
+    this.cancelCompletion();
     this.pendingPraise = null;
     this.player.pause();
     this.clear();
@@ -117,10 +123,13 @@ export class MasterVoice {
   success(progress: number) {
     if (progress < 100 || this.completed) return;
     this.completed = true;
-    this.speak(this.characterLine('success'));
-    this.pendingPraise = this.enabled
-      ? encouragementFor(++this.completions)
-      : null;
+    const line = this.characterLine('success');
+    const praise = this.enabled ? encouragementFor(++this.completions) : null;
+    this.completionTimer = setTimeout(() => {
+      this.completionTimer = undefined;
+      this.speak(line);
+      this.pendingPraise = this.enabled ? praise : null;
+    }, 500);
   }
   mistake() {
     const now = performance.now();
@@ -135,6 +144,7 @@ export class MasterVoice {
   setEnabled(value: boolean) {
     this.enabled = value;
     if (!value) {
+      this.cancelCompletion();
       this.pendingPraise = null;
       this.player.pause();
       this.duck(false);
@@ -144,6 +154,7 @@ export class MasterVoice {
     this.player.volume = Math.max(0, Math.min(1, value));
   }
   pause() {
+    this.cancelCompletion();
     this.pendingPraise = null;
     this.player.pause();
     this.clear();

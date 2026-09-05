@@ -63,7 +63,8 @@ void test('success repeats pronunciation without spoken praise', () => {
   }
 });
 
-void test('character narration plays once at start and only at full completion', async () => {
+void test('character narration waits 500ms after completion and cancels on a new character', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const { MasterVoice } = await import('../components/dojo/voice.ts');
   const originalAudio = globalThis.Audio;
   const played: string[] = [];
@@ -94,9 +95,16 @@ void test('character narration plays once at start and only at full completion',
     assert.deepEqual(played, ['/audio/geu.wav']);
     voice.success(100);
     voice.success(100);
+    t.mock.timers.tick(499);
+    assert.equal(played.length, 1);
+    t.mock.timers.tick(1);
     assert.deepEqual(played, ['/audio/geu.wav', '/audio/geu.wav']);
     voice.beginCharacter();
     assert.equal(played.length, 3);
+    voice.success(100);
+    voice.beginCharacter();
+    t.mock.timers.tick(500);
+    assert.equal(played.length, 4);
   } finally {
     voice.dispose();
     globalThis.Audio = originalAudio;
