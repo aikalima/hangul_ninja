@@ -62,3 +62,43 @@ void test('success repeats pronunciation without spoken praise', () => {
     assert.doesNotMatch(line.en, /well done/i);
   }
 });
+
+void test('character narration plays once at start and only at full completion', async () => {
+  const { MasterVoice } = await import('../components/dojo/voice.ts');
+  const originalAudio = globalThis.Audio;
+  const played: string[] = [];
+  class FakeAudio {
+    src = '';
+    volume = 1;
+    preload = '';
+    onended = null;
+    onerror = null;
+    play() {
+      played.push(this.src);
+      return Promise.resolve();
+    }
+    pause() {}
+    removeAttribute() {}
+    load() {}
+  }
+  globalThis.Audio = FakeAudio as unknown as typeof Audio;
+  const voice = new MasterVoice(
+    () => {},
+    () => {},
+  );
+  try {
+    voice.beginCharacter();
+    voice.intro();
+    voice.success(50);
+    voice.intro();
+    assert.deepEqual(played, ['/audio/geu.wav']);
+    voice.success(100);
+    voice.success(100);
+    assert.deepEqual(played, ['/audio/geu.wav', '/audio/geu.wav']);
+    voice.beginCharacter();
+    assert.equal(played.length, 3);
+  } finally {
+    voice.dispose();
+    globalThis.Audio = originalAudio;
+  }
+});

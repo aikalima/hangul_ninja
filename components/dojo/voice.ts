@@ -3,13 +3,14 @@ import {
   pronunciationLine,
   type PronunciationMode,
   type VoiceLine,
-} from '@/lib/voice-lines';
+} from '../../lib/voice-lines.ts';
 
 export class MasterVoice {
   private player: HTMLAudioElement;
   private enabled = true;
   private pronunciation: PronunciationMode = 'sound';
   private introduced = false;
+  private completed = false;
   private lastMistake = -Infinity;
   private mistakeIndex = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -72,13 +73,23 @@ export class MasterVoice {
       }
     });
   }
-  intro(force = false) {
-    if (force || !this.introduced) {
+  intro() {
+    if (!this.introduced) {
       this.introduced = true;
       this.speak(pronunciationLine(this.pronunciation, 'intro'));
     }
   }
-  success() {
+  beginCharacter() {
+    this.introduced = false;
+    this.completed = false;
+    this.intro();
+  }
+  replay() {
+    this.speak(pronunciationLine(this.pronunciation, 'intro'));
+  }
+  success(progress: number) {
+    if (progress < 100 || this.completed) return;
+    this.completed = true;
     this.speak(pronunciationLine(this.pronunciation, 'success'));
   }
   mistake() {

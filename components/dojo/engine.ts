@@ -325,7 +325,7 @@ export function createDojo(
       lessonRoot.localToWorld(hitPosition);
       audio.impact(hitPosition, complete);
       if (complete) {
-        voice.success();
+        voice.success(lesson.progress);
         celebration.play();
       }
       effects.cut(hitPosition, complete);
@@ -351,7 +351,7 @@ export function createDojo(
     celebration.reset();
     tipValid = false;
     audio.unlock();
-    voice.intro(true);
+    voice.beginCharacter();
     gestureDistance = 0;
     gesturePrevious = null;
     trailCount = 0;
@@ -799,7 +799,7 @@ export function createDojo(
     },
     pronounce() {
       audio.unlock();
-      voice.intro(true);
+      voice.replay();
     },
     setSound(v) {
       audio.setEffects(v);
