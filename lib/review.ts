@@ -16,10 +16,24 @@ export class TimedReview {
   deadline = 0;
   seconds = 3;
   start(pool: string[], now: number, random = Math.random) {
+    const previousOrder = this.order.join();
     this.order = [...pool];
     for (let i = this.order.length - 1; i > 0; i--) {
       const j = Math.floor(random() * (i + 1));
       [this.order[i], this.order[j]] = [this.order[j], this.order[i]];
+    }
+    // Even a valid shuffle can return lesson order; avoid that and consecutive repeats.
+    if (this.order.length > 1) {
+      const lessonOrder = pool.join();
+      for (let shift = 0; shift < this.order.length; shift++) {
+        const key = this.order.join();
+        if (
+          key !== lessonOrder &&
+          (key !== previousOrder || this.order.length === 2)
+        )
+          break;
+        this.order.push(this.order.shift()!);
+      }
     }
     this.index = 0;
     this.state = 'countdown';

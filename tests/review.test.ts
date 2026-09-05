@@ -61,3 +61,16 @@ void test('custom timer and interruptions cannot grant a pass', () => {
   r.complete(4000);
   assert.equal(r.state, 'failed');
 });
+
+void test('reviews never use lesson order or repeat the previous shuffled order', () => {
+  const pool = reviewPool(0);
+  const review = new TimedReview();
+  let previous = '';
+  for (let attempt = 0; attempt < 12; attempt++) {
+    review.start(pool, attempt * 10000, () => 0.99999);
+    assert.notEqual(review.order.join(), pool.join());
+    assert.notEqual(review.order.join(), previous);
+    assert.deepEqual([...review.order].sort(), [...pool].sort());
+    previous = review.order.join();
+  }
+});
