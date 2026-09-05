@@ -117,6 +117,71 @@ export default function Home() {
         <div className="dojo-layout">
           <section className="viewport-shell" aria-label="Interactive 3D dojo">
             <div ref={host} className="scene" />
+            {(reviewing || finished) && (
+              <section
+                className={`review-overlay ${stage === 'review-active' || stage === 'review-between' ? 'running' : ''}`}
+                aria-label="Timed review"
+              >
+                <span className="eyebrow">
+                  {finished ? 'REVIEW PASSED' : 'TIMED REVIEW · LEVEL 1'}
+                </span>
+                <h2>
+                  {finished
+                    ? 'Level 1 complete!'
+                    : stage === 'review-countdown'
+                      ? Math.ceil(status.reviewRemaining ?? 3)
+                      : stage === 'review-active'
+                        ? `${(status.reviewRemaining ?? 0).toFixed(1)}s`
+                        : stage === 'review-between'
+                          ? 'Next…'
+                          : stage === 'review-failed'
+                            ? 'Time’s up!'
+                            : 'Put your training to the test.'}
+                </h2>
+                <p>
+                  {status.reviewIndex ?? 0} / {status.reviewTotal ?? 6}{' '}
+                  characters passed
+                </p>
+                {!timed && (
+                  <>
+                    <p>
+                      {finished
+                        ? 'You’re ready for Level 2. Coming soon.'
+                        : `Trace every character before time runs out. ${reviewSeconds} seconds each, shuffled order.`}
+                    </p>
+                    {!finished && (
+                      <label>
+                        Seconds per character{' '}
+                        <input
+                          aria-label="Seconds per review character"
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={reviewSeconds}
+                          onChange={(e) =>
+                            api.current?.setReviewSeconds(
+                              Number(e.target.value) || 3,
+                            )
+                          }
+                        />
+                      </label>
+                    )}
+                    <button
+                      className="primary-button"
+                      disabled={!loaded}
+                      onClick={advance}
+                    >
+                      {finished
+                        ? 'Replay Level 1'
+                        : stage === 'review-failed'
+                          ? 'Retry test'
+                          : 'Begin test'}{' '}
+                      <ArrowRight size={18} />
+                    </button>
+                  </>
+                )}
+              </section>
+            )}
             <div className="scene-top">
               <span className="mode-pill">
                 <span /> DESKTOP PREVIEW
@@ -126,7 +191,7 @@ export default function Home() {
               </span>
             </div>
             <div
-              className="master-subtitle"
+              className={`master-subtitle ${reviewing || finished ? 'review-subtitle' : ''}`}
               aria-live="polite"
               aria-atomic="true"
             >
@@ -207,42 +272,6 @@ export default function Home() {
                     ? 'Level 1 begins · Six basic vowels'
                     : `${doneCount} / 6 characters complete`}
             </p>
-            {reviewing && (
-              <section className="review-controls" aria-label="Timed review">
-                <strong>
-                  {stage === 'review-countdown'
-                    ? `Get ready · ${Math.ceil(status.reviewRemaining ?? 3)}`
-                    : stage === 'review-active'
-                      ? `${(status.reviewRemaining ?? 0).toFixed(1)}s left`
-                      : stage === 'review-between'
-                        ? 'Correct! Next…'
-                        : stage === 'review-failed'
-                          ? 'Review not passed'
-                          : 'Six characters · shuffled'}
-                </strong>
-                <span>
-                  {status.reviewIndex ?? 0} / {status.reviewTotal ?? 6} passed
-                </span>
-                <label>
-                  Seconds per character{' '}
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    step="1"
-                    value={reviewSeconds}
-                    disabled={timed}
-                    onChange={(e) =>
-                      api.current?.setReviewSeconds(Number(e.target.value) || 3)
-                    }
-                  />
-                </label>
-                <p>
-                  Complete every stroke in order. Release and re-grip for the
-                  next character.
-                </p>
-              </section>
-            )}
             <div className="character-title">
               <span lang="ko">{vowel.glyph}</span>
               <div>
@@ -342,6 +371,7 @@ export default function Home() {
             </div>
             <button
               className="primary-button"
+              hidden={reviewing || finished}
               disabled={!loaded || timed || stage === 'character-complete'}
               onClick={advance}
             >

@@ -218,6 +218,9 @@ export function createDojo(
   subtitle.sprite.position.set(0, 0.92, 0.03);
   subtitle.sprite.visible = false;
   lessonRoot.add(subtitle.sprite);
+  const reviewPanel = makeText(1.45, 360);
+  lessonRoot.add(reviewPanel.sprite);
+  reviewPanel.sprite.visible = false;
   const feedback = makeText(1.65, 192);
   feedback.sprite.position.set(0, -0.88, 0.01);
   lessonRoot.add(feedback.sprite);
@@ -352,6 +355,62 @@ export function createDojo(
       112,
     );
     heading.texture.needsUpdate = true;
+    const panel = reviewPanel.ctx;
+    panel.clearRect(0, 0, 1024, 360);
+    panel.fillStyle = '#172720f5';
+    panel.fillRect(0, 0, 1024, 360);
+    panel.strokeStyle = '#d9b978';
+    panel.lineWidth = 4;
+    panel.strokeRect(2, 2, 1020, 356);
+    panel.textAlign = 'center';
+    panel.fillStyle = '#d9b978';
+    panel.font = '28px Arial';
+    panel.fillText('TIMED REVIEW · LEVEL 1', 512, 55);
+    panel.fillStyle = '#fff0cc';
+    panel.font = 'bold 54px Arial';
+    panel.fillText(
+      stage === 'review-countdown'
+        ? String(Math.ceil(review.remaining(performance.now())))
+        : stage === 'review-active'
+          ? `${review.remaining(performance.now()).toFixed(1)}s`
+          : stage === 'review-failed'
+            ? 'TIME’S UP'
+            : stage === 'level-complete'
+              ? 'REVIEW PASSED'
+              : 'TEST YOUR TRAINING',
+      512,
+      140,
+    );
+    panel.font = '28px Arial';
+    panel.fillText(
+      `${review.index} / ${review.order.length || 6} characters passed`,
+      512,
+      200,
+    );
+    panel.font = '25px Arial';
+    panel.fillText(
+      stage === 'review-active'
+        ? 'Trace every stroke before time runs out'
+        : stage === 'review-countdown'
+          ? 'Get ready…'
+          : stage === 'level-complete'
+            ? 'Level 1 complete · Level 2 coming soon'
+            : `${review.seconds} seconds per character · Shuffled order`,
+      512,
+      257,
+    );
+    panel.fillText(
+      stage === 'review-ready'
+        ? 'Press trigger to begin test'
+        : stage === 'review-failed'
+          ? 'Press trigger to retry'
+          : stage === 'level-complete'
+            ? 'Press trigger to replay Level 1'
+            : '',
+      512,
+      310,
+    );
+    reviewPanel.texture.needsUpdate = true;
     const sub = subtitle.ctx;
     sub.clearRect(0, 0, 1024, 224);
     if (masterLine) {
@@ -994,6 +1053,23 @@ export function createDojo(
       !subtitle.sprite.visible &&
       (stage.startsWith('review-') || stage === 'level-complete');
     feedback.sprite.visible = stage !== 'intro';
+    const reviewScreen =
+      stage.startsWith('review-') || stage === 'level-complete';
+    const blockingReview =
+      reviewScreen && stage !== 'review-active' && stage !== 'review-between';
+    reviewPanel.sprite.visible = reviewScreen && renderer.xr.isPresenting;
+    reviewPanel.sprite.position.set(0, blockingReview ? 0.05 : 0.9, 0.06);
+    guideRoot.visible = !blockingReview;
+    if (blockingReview) {
+      target.visible = false;
+      spark.visible = false;
+      arrow.sprite.visible = false;
+    }
+    if (reviewScreen) {
+      heading.sprite.visible = false;
+      feedback.sprite.visible = false;
+    }
+    subtitle.sprite.position.y = reviewScreen ? -0.88 : 0.92;
     renderer.render(scene, camera);
   });
   report();
@@ -1102,7 +1178,9 @@ export function createDojo(
       });
       geometries.forEach((g) => g.dispose());
       mats.forEach((m) => m.dispose());
-      [heading, feedback, arrow, subtitle].forEach((t) => t.texture.dispose());
+      [heading, feedback, arrow, subtitle, reviewPanel].forEach((t) =>
+        t.texture.dispose(),
+      );
       renderer.dispose();
       canvas.remove();
     },
