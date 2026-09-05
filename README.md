@@ -80,23 +80,23 @@ docker run --rm --name hangul-ninja -p 8080:8080 -e PORT=8080 hangul-ninja:cloud
 
 Open **http://localhost:8080/** for the desktop preview. The explicit platform also produces a Cloud Run-compatible image when building on an Apple Silicon Mac. Stop the container with Ctrl+C, or run `docker stop hangul-ninja` in another terminal.
 
-### Deploy to project `dev-copilot`
+### Deploy to your Google Cloud project
 
-These commands deploy a new Cloud Run service named `hangul-ninja` in `us-central1`. Change the region if you prefer another location. The project must have billing enabled, and your Google account must have permission to build and deploy Cloud Run services.
+Replace `YOUR_PROJECT_ID`, `YOUR_REGION`, and `YOUR_SERVICE_NAME` with your own Google Cloud project ID, deployment region, and chosen service name. The project must have billing enabled, and your Google account must have permission to build and deploy Cloud Run services.
 
 Authenticate and enable the required APIs:
 
 ```sh
 gcloud auth login
-gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project=dev-copilot
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project=YOUR_PROJECT_ID
 ```
 
 Build and deploy directly from this directory; Cloud Build uses the included Dockerfile, so no local image push is necessary:
 
 ```sh
-gcloud run deploy hangul-ninja \
-  --project=dev-copilot \
-  --region=us-central1 \
+gcloud run deploy YOUR_SERVICE_NAME \
+  --project=YOUR_PROJECT_ID \
+  --region=YOUR_REGION \
   --source=. \
   --port=8080 \
   --cpu=1 \
@@ -109,7 +109,7 @@ gcloud run deploy hangul-ninja \
 This command keeps the service private using Cloud Run IAM. It does not create an in-game login page. For a private desktop smoke test, run:
 
 ```sh
-gcloud run services proxy hangul-ninja --project=dev-copilot --region=us-central1 --port=8080
+gcloud run services proxy YOUR_SERVICE_NAME --project=YOUR_PROJECT_ID --region=YOUR_REGION --port=8080
 ```
 
 Then open **http://localhost:8080/**. Direct access from Quest Browser needs a browser-compatible authentication solution or public access. If you want **anyone with the URL** to play, replace `--no-allow-unauthenticated` with `--allow-unauthenticated` in the deployment command. Organization policy may restrict public access.
@@ -117,7 +117,7 @@ Then open **http://localhost:8080/**. Direct access from Quest Browser needs a b
 Find the deployed HTTPS URL:
 
 ```sh
-gcloud run services describe hangul-ninja --project=dev-copilot --region=us-central1 --format='value(status.url)'
+gcloud run services describe YOUR_SERVICE_NAME --project=YOUR_PROJECT_ID --region=YOUR_REGION --format='value(status.url)'
 ```
 
 Subsequent deployments use the same `gcloud run deploy` command. Cloud Build, Artifact Registry, and Cloud Run can incur charges; scaling to zero does not eliminate build or image-storage costs.
