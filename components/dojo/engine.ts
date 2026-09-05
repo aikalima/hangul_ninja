@@ -246,6 +246,7 @@ export function createDojo(
     host.parentElement?.querySelector<HTMLElement>('[data-master-gesture]') ??
       null,
   );
+  let demoPoint = 0;
   let lastStatus = '',
     demoStart = 0,
     disposed = false;
@@ -995,6 +996,7 @@ export function createDojo(
       const p = Math.min(PATH.length - 1, Math.max(0, t * (PATH.length - 1))),
         i = Math.floor(p),
         next = i % 21 === 20 ? i : Math.min(PATH.length - 1, i + 1);
+      demoPoint = p;
       cursor.set(
         THREE.MathUtils.lerp(PATH[i].x, PATH[next].x, p - i),
         THREE.MathUtils.lerp(PATH[i].y, PATH[next].y, p - i),
@@ -1103,7 +1105,10 @@ export function createDojo(
     else spark.position.copy(target.position);
     spark.visible = lesson.state !== 'complete';
     guideSegments.forEach((m) => {
-      m.material = m.userData.end < lesson.next ? completeMat : guideMat;
+      m.material =
+        m.userData.end < (demoStart ? demoPoint : lesson.next)
+          ? completeMat
+          : guideMat;
     });
     subtitle.sprite.visible = !!masterLine && renderer.xr.isPresenting;
     heading.sprite.visible =

@@ -25,6 +25,24 @@ import type { DojoAPI, DojoStatus } from '@/components/dojo/engine';
 
 export default function Home() {
   const dialog = useRef<HTMLDialogElement>(null);
+  const welcomeDialog = useRef<HTMLDialogElement>(null);
+  const demoSeen = useRef(false);
+  const [onboarding, setOnboarding] = useState<
+    'closed' | 'welcome' | 'watching' | 'ready'
+  >('closed');
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('hangul-ninja-welcome-v1') === 'done') return;
+    } catch {
+      /* Storage may be unavailable in private browsing. */
+    }
+    const timer = window.setTimeout(() => setOnboarding('welcome'), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    if (onboarding === 'closed') welcomeDialog.current?.close();
+    else if (!welcomeDialog.current?.open) welcomeDialog.current?.showModal();
+  }, [onboarding]);
   const host = useRef<HTMLDivElement>(null);
   const api = useRef<DojoAPI | null>(null);
   const [status, setStatus] = useState<DojoStatus>({
@@ -69,6 +87,26 @@ export default function Home() {
     if (help) dialog.current?.showModal();
     else dialog.current?.close();
   }, [help]);
+  useEffect(() => {
+    if (onboarding !== 'watching') return;
+    if (status.phase === 'watching') demoSeen.current = true;
+    else if (demoSeen.current) setOnboarding('ready');
+  }, [onboarding, status.phase]);
+  const showTutorial = () => {
+    demoSeen.current = false;
+    setOnboarding('watching');
+    api.current?.demonstrate();
+  };
+  const finishWelcome = () => {
+    try {
+      localStorage.setItem('hangul-ninja-welcome-v1', 'done');
+    } catch {
+      /* Keep this visit usable without storage. */
+    }
+    welcomeDialog.current?.close();
+    setOnboarding('closed');
+    api.current?.advance();
+  };
   const reset = () => api.current?.reset();
   const index = status.characterIndex ?? 0;
   const levelIndex = status.levelIndex ?? 0;
@@ -87,6 +125,54 @@ export default function Home() {
   const advance = () => api.current?.advance();
   return (
     <main>
+      <dialog
+        ref={welcomeDialog}
+        className={`welcome-dialog ${onboarding === 'watching' ? 'is-watching' : ''}`}
+        aria-labelledby="welcome-title"
+        onCancel={(e) => {
+          e.preventDefault();
+          if (onboarding !== 'watching') finishWelcome();
+        }}
+      >
+        <p className="eyebrow">YOUR FIRST DAY IN THE DOJO</p>
+        <h2 id="welcome-title">
+          {onboarding === 'watching'
+            ? 'Watch the katana trace ㅏ'
+            : onboarding === 'ready'
+              ? 'Ready to start?'
+              : 'Welcome, Hangul Ninja.'}
+        </h2>
+        <p>
+          {onboarding === 'watching'
+            ? 'First, cut down. Then sweep right from the middle. Release between cuts to reposition.'
+            : onboarding === 'ready'
+              ? 'Your turn. Follow the glowing cuts with your katana. Start with ㅏ (a), then learn 40 Korean letters across six levels.'
+              : 'Learn the Korean alphabet through katana cuts in a peaceful VR dojo. Follow glowing guides, hear each letter in Korean, and build your skills one character at a time. You can also play here with a mouse—no headset needed.'}
+        </p>
+        {onboarding !== 'watching' && (
+          <div className="welcome-actions">
+            <button
+              className="primary-button"
+              disabled={!loaded}
+              onClick={onboarding === 'ready' ? finishWelcome : showTutorial}
+            >
+              {onboarding === 'ready' ? 'Ready — begin training' : 'Show me'}{' '}
+              <Play size={18} />
+            </button>
+            <button
+              className="secondary-button"
+              disabled={!loaded}
+              onClick={onboarding === 'ready' ? showTutorial : finishWelcome}
+            >
+              {onboarding === 'ready' ? 'Show me again' : 'Skip tutorial'}
+            </button>
+          </div>
+        )}
+        {onboarding === 'watching' && (
+          <output className="eyebrow">DEMONSTRATION · NO CUTS REQUIRED</output>
+        )}
+        {!loaded && <output>{error || 'Preparing your katana…'}</output>}
+      </dialog>
       <header className="topbar">
         <Link className="brand" href="/" aria-label="Hangul Ninja home">
           <span className="brand-mark">

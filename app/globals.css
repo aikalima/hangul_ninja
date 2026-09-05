@@ -1151,3 +1151,44 @@ footer > span:nth-child(2) {
 .direction {
   font-size: 24px;
 }
+
+.welcome-dialog {
+  width: min(520px, calc(100vw - 32px));
+  padding: 30px;
+  color: #fff6e5;
+  background: #17221ef5;
+  border: 1px solid #d9b97888;
+  border-radius: 14px;
+  box-shadow: 0 20px 80px #0008;
+  margin: auto;
+}
+.welcome-dialog::backdrop {
+  background: #07110cd9;
+}
+.welcome-dialog h2 {
+  font-size: clamp(24px, 4vw, 32px);
+  margin: 12px 0;
+}
+.welcome-dialog p:not(.eyebrow) {
+  line-height: 1.65;
+  color: #d8ded7;
+  margin-bottom: 20px;
+}
+.welcome-actions {
+  display: grid;
+  gap: 10px;
+}
+.welcome-dialog.is-watching {
+  top: auto;
+  bottom: 20px;
+  padding: 18px 24px;
+}
+.welcome-dialog.is-watching::backdrop {
+  background: transparent;
+}
+.welcome-dialog.is-watching h2 {
+  font-size: 22px;
+}
+.welcome-dialog.is-watching p {
+  margin-bottom: 12px;
+}
