@@ -183,27 +183,14 @@ export default function Home() {
           HANGUL<span className="brand-light">NINJA</span>
           <span className="brand-period">.</span>
         </Link>
-        <div className="top-center">
-          <span className="active-dot" /> THE DOJO
-        </div>
+        <h1 className="header-level">
+          <span>Level {levelIndex + 1}</span> · {level.title}
+        </h1>
         <button className="text-button" onClick={() => setHelp(true)}>
           How to play <span>↗</span>
         </button>
       </header>
       <section className="workspace">
-        <div className="page-heading">
-          <div>
-            <p className="eyebrow">
-              LEVEL {levelIndex + 1} <span>/</span> {level.title.toUpperCase()}
-            </p>
-            <h1>
-              Every stroke is a beginning<span>.</span>
-            </h1>
-          </div>
-          <div className="prototype">
-            <span /> WEBXR PROTOTYPE <b>v1.0</b>
-          </div>
-        </div>
         <div className="dojo-layout">
           <section className="viewport-shell" aria-label="Interactive 3D dojo">
             <div ref={host} className="scene" />

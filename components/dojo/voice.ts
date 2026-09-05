@@ -45,6 +45,7 @@ export class MasterVoice {
   private pendingPraise: VoiceLine | null = null;
   private lastMistake = -Infinity;
   private mistakeIndex = 0;
+  private mistakes = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private completionTimer: ReturnType<typeof setTimeout> | undefined;
   private cancelCompletion() {
@@ -151,8 +152,9 @@ export class MasterVoice {
     }, 500);
   }
   mistake() {
+    if (++this.mistakes % 3 !== 0) return;
     const now = performance.now();
-    if (now - this.lastMistake < 4500) return;
+    if (now - this.lastMistake < 12000) return;
     this.lastMistake = now;
     this.speak([VOICE_LINES.focus, VOICE_LINES.sword][this.mistakeIndex++ % 2]);
   }

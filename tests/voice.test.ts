@@ -128,3 +128,43 @@ void test('encouragement appears every third completion and rotates all five phr
     'praise-polite',
   ]);
 });
+
+void test('corrections skip the first two mistakes and respect the cooldown', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let now = 0;
+  t.mock.method(performance, 'now', () => now);
+  const { MasterVoice } = await import('../components/dojo/voice.ts');
+  const originalAudio = globalThis.Audio;
+  const played: string[] = [];
+  class FakeAudio {
+    src = '';
+    play() { played.push(this.src); return Promise.resolve(); }
+    pause() {}
+    removeAttribute() {}
+    load() {}
+  }
+  globalThis.Audio = FakeAudio as unknown as typeof Audio;
+  const voice = new MasterVoice(() => {}, () => {});
+  try {
+    voice.mistake();
+    voice.mistake();
+    assert.equal(played.length, 0);
+    voice.mistake();
+    assert.deepEqual(played, [`/audio/${VOICE_LINES.focus.file}.wav`]);
+    now = 5000;
+    for (let i = 0; i < 3; i++) voice.mistake();
+    assert.equal(played.length, 1);
+    now = 12000;
+    voice.mistake();
+    voice.mistake();
+    assert.equal(played.length, 1);
+    voice.mistake();
+    assert.deepEqual(played, [
+      `/audio/${VOICE_LINES.focus.file}.wav`,
+      `/audio/${VOICE_LINES.sword.file}.wav`,
+    ]);
+  } finally {
+    voice.dispose();
+    globalThis.Audio = originalAudio;
+  }
+});

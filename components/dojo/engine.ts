@@ -553,7 +553,6 @@ export function createDojo(
       lessonRoot.localToWorld(hitPosition);
       audio.impact(hitPosition, false, true);
       celebration.reset();
-      voice.mistake();
     }
     report();
   }
@@ -923,8 +922,12 @@ export function createDojo(
     if (renderer.xr.isPresenting) return;
     const { width, height } = host.getBoundingClientRect();
     camera.aspect = width / height;
-    // Slightly widen the desktop view; preserve the mobile character scale.
-    camera.fov = mobileLayout.matches ? 58 : 64;
+    // Preserve enough horizontal room for the guide in tall mobile viewports.
+    camera.fov = mobileLayout.matches
+      ? Math.max(58, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(25)) / camera.aspect)))
+      : 64;
+    if (mobileLayout.matches) camera.lookAt(lessonRoot.position);
+    else camera.lookAt(0, 1.45, -1.3);
     camera.updateProjectionMatrix();
     renderer.setSize(width, height);
   });
