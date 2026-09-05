@@ -380,7 +380,7 @@ export default function Home() {
             </div>
             <button
               className="primary-button"
-              disabled={!loaded || timed}
+              disabled={!loaded || timed || stage === 'character-complete'}
               onClick={advance}
             >
               {status.phase === 'complete' ? (
@@ -399,7 +399,7 @@ export default function Home() {
                       : stage === 'intro'
                         ? 'Begin Level 1'
                         : stage === 'character-complete'
-                          ? `Next: ${VOWELS[Math.min(5, index + 1)].glyph}`
+                          ? `Next: ${VOWELS[Math.min(5, index + 1)].glyph} in 2 seconds`
                           : 'Restart character'}
               <ArrowRight size={18} />
             </button>
@@ -552,10 +552,11 @@ export default function Home() {
         <h3>In Meta Quest</h3>
         <p>
           Enter VR and press a trigger to begin the level. Follow the numbered
-          cuts with the katana tip. After completing a character, release and
-          press the trigger to advance. After the sixth vowel, press the trigger
-          to start the timed review. Pass every character before Level 1 is
-          complete. Squeeze the grip to recenter the guide.
+          cuts with the katana tip. After completing a character, release the
+          trigger. The next character appears automatically after two seconds.
+          After the sixth vowel, press the trigger to start the timed review.
+          Pass every character before Level 1 is complete. Squeeze the grip to
+          recenter the guide.
         </p>
         <h3>Timed review</h3>
         <p>

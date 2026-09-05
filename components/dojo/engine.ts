@@ -130,6 +130,7 @@ export function createDojo(
   }
   const review = new TimedReview();
   let characterIndex = 0;
+  let nextCharacterAt = Infinity;
   let stage: NonNullable<DojoStatus['stage']> = 'intro';
   let PATH = VOWELS[0].cuts.flat();
   const guideRoot = new THREE.Group();
@@ -299,7 +300,7 @@ export function createDojo(
                   : stage === 'level-complete'
                     ? 'REVIEW PASSED · Level 1 complete · Level 2 coming soon.'
                     : stage === 'character-complete'
-                      ? `${vowel.glyph} complete · Press trigger or Next character.`
+                      ? `${vowel.glyph} complete · Next character in 2 seconds.`
                       : watching
                         ? `Watch ${vowel.glyph}: follow each cut in order.`
                         : `${Math.min(lesson.completedCuts + 1, vowel.cuts.length)} / ${vowel.cuts.length} · ${vowel.directions[lesson.completedCuts] ?? 'Complete'}`;
@@ -397,7 +398,9 @@ export function createDojo(
       masterLine?.en ??
         (renderer.xr.isPresenting
           ? phase === 'complete'
-            ? 'Press trigger to continue'
+            ? stage === 'character-complete'
+              ? 'Next character appears automatically'
+              : 'Press trigger to continue'
             : 'Hold trigger to cut · Release between strokes · Grip: recenter'
           : 'Drag along each numbered cut · Release to reposition'),
       512,
@@ -438,6 +441,8 @@ export function createDojo(
             characterIndex === VOWELS.length - 1
               ? 'review-ready'
               : 'character-complete';
+        if (stage === 'character-complete')
+          nextCharacterAt = performance.now() + 2000;
         voice.success(lesson.progress);
         celebration.play();
       }
@@ -524,7 +529,9 @@ export function createDojo(
     }
     report();
   }
-  function advance() {
+  function advance(automatic = false) {
+    if (stage === 'character-complete' && !automatic) return;
+    nextCharacterAt = Infinity;
     if (stage === 'review-ready' || stage === 'review-failed') {
       audio.unlock();
       voice.pause();
@@ -832,6 +839,17 @@ export function createDojo(
     const dt = lastFrame ? Math.min((time - lastFrame) / 1000, 0.05) : 0;
     lastFrame = time;
     elapsed += dt;
+    if (
+      stage === 'character-complete' &&
+      !document.hidden &&
+      performance.now() >= nextCharacterAt
+    ) {
+      pointerHeld = false;
+      keyboardHeld = false;
+      activeController = -1;
+      keys.clear();
+      advance(true);
+    }
     if (
       stage.startsWith('review-') &&
       !['review-ready', 'review-failed'].includes(stage)
