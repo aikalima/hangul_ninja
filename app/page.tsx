@@ -378,7 +378,7 @@ export default function Home() {
               {vowel.note}
             </p>
             <div className="divider" />
-            <div className="section-label">
+            <div className="section-label movement-heading">
               <span>THE MOVEMENT</span>
               <span>
                 {vowel.cuts.length} CUT{vowel.cuts.length > 1 ? 'S' : ''}

@@ -1229,3 +1229,52 @@ footer > span:nth-child(2) {
     margin-left: auto;
   }
 }
+
+@media (max-width: 720px) {
+  .lesson-panel .movement-heading,
+  .lesson-panel .movement,
+  .lesson-panel .tip,
+  .viewport-shell .scene-caption,
+  .scene-bottom > span {
+    display: none;
+  }
+
+  /* Reserve a footer below the 3D canvas so messages never cover the character. */
+  .viewport-shell {
+    min-height: 500px;
+  }
+  .viewport-shell .scene {
+    bottom: 140px;
+  }
+  .master-subtitle {
+    top: auto;
+    bottom: 54px;
+    width: calc(100% - 24px);
+    padding: 7px 10px;
+    max-height: 82px;
+    overflow-y: auto;
+    pointer-events: auto;
+  }
+  .master-subtitle > span {
+    font-size: 8px;
+  }
+  .master-subtitle p {
+    margin-top: 3px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .master-subtitle:has([data-master-gesture] canvas:not([hidden])) {
+    padding-right: 58px;
+    min-height: 54px;
+  }
+  [data-master-gesture] canvas {
+    width: 48px;
+    height: 48px;
+  }
+  .scene-bottom {
+    padding: 10px 12px;
+  }
+  .scene-bottom > div {
+    margin-left: auto;
+  }
+}

@@ -908,6 +908,7 @@ export function createDojo(
   canvas.addEventListener('keydown', keyDown);
   canvas.addEventListener('keyup', keyUp);
   canvas.addEventListener('blur', blur);
+  const mobileLayout = window.matchMedia('(max-width: 720px)');
   const resize = new ResizeObserver(() => {
     if (renderer.xr.isPresenting) return;
     const { width, height } = host.getBoundingClientRect();
@@ -1114,7 +1115,8 @@ export function createDojo(
     heading.sprite.visible =
       !subtitle.sprite.visible &&
       (stage.startsWith('review-') || stage === 'level-complete');
-    feedback.sprite.visible = stage !== 'intro';
+    feedback.sprite.visible =
+      stage !== 'intro' && (renderer.xr.isPresenting || !mobileLayout.matches);
     const reviewScreen =
       stage.startsWith('review-') || stage === 'level-complete';
     const blockingReview =
