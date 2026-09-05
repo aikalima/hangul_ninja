@@ -913,8 +913,8 @@ export function createDojo(
     if (renderer.xr.isPresenting) return;
     const { width, height } = host.getBoundingClientRect();
     camera.aspect = width / height;
-    // Slightly widen the mobile view to soften the enlarged character scale.
-    camera.fov = mobileLayout.matches ? 64 : 58;
+    // Slightly widen the desktop view; preserve the mobile character scale.
+    camera.fov = mobileLayout.matches ? 58 : 64;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height);
   });
