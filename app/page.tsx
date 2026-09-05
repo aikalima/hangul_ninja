@@ -399,7 +399,7 @@ export default function Home() {
                       : stage === 'intro'
                         ? 'Begin Level 1'
                         : stage === 'character-complete'
-                          ? `Next: ${VOWELS[Math.min(5, index + 1)].glyph} in 2 seconds`
+                          ? `Next: ${VOWELS[Math.min(5, index + 1)].glyph} in 3 seconds`
                           : 'Restart character'}
               <ArrowRight size={18} />
             </button>
@@ -553,7 +553,7 @@ export default function Home() {
         <p>
           Enter VR and press a trigger to begin the level. Follow the numbered
           cuts with the katana tip. After completing a character, release the
-          trigger. The next character appears automatically after two seconds.
+          trigger. The next character appears automatically after three seconds.
           After the sixth vowel, press the trigger to start the timed review.
           Pass every character before Level 1 is complete. Squeeze the grip to
           recenter the guide.

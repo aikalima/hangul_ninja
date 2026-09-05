@@ -300,7 +300,7 @@ export function createDojo(
                   : stage === 'level-complete'
                     ? 'REVIEW PASSED · Level 1 complete · Level 2 coming soon.'
                     : stage === 'character-complete'
-                      ? `${vowel.glyph} complete · Next character in 2 seconds.`
+                      ? `${vowel.glyph} complete · Next character in 3 seconds.`
                       : watching
                         ? `Watch ${vowel.glyph}: follow each cut in order.`
                         : `${Math.min(lesson.completedCuts + 1, vowel.cuts.length)} / ${vowel.cuts.length} · ${vowel.directions[lesson.completedCuts] ?? 'Complete'}`;
@@ -442,7 +442,7 @@ export function createDojo(
               ? 'review-ready'
               : 'character-complete';
         if (stage === 'character-complete')
-          nextCharacterAt = performance.now() + 2000;
+          nextCharacterAt = performance.now() + 3000;
         voice.success(lesson.progress);
         celebration.play();
       }

@@ -6,7 +6,7 @@ A three-second preparation countdown precedes the first character. Each characte
 
 # Hangul Ninja · Level 1
 
-The playable curriculum now begins with six basic vowels: ㅏ a, ㅓ eo, ㅗ o, ㅜ u, ㅡ eu, ㅣ i. A level introduction precedes practice; each completed lesson character advances automatically after two seconds, and the sixth ends on a persistent Level 1 completion state. Replay returns to ㅏ. Progress is session-local.
+The playable curriculum now begins with six basic vowels: ㅏ a, ㅓ eo, ㅗ o, ㅜ u, ㅡ eu, ㅣ i. A level introduction precedes practice; each completed lesson character advances automatically after three seconds, and the sixth ends on a persistent Level 1 completion state. Replay returns to ㅏ. Progress is session-local.
 
 The six-level roadmap follows the requested order: Basic vowels, Basic consonants, Y vowels, Aspirated consonants, Tense consonants, Compound vowels. Only Level 1 is currently playable; the others are explicitly marked coming soon. The original ㄱ recognition module remains covered by tests for later consonant-level work.
 
