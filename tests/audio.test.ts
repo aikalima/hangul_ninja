@@ -92,15 +92,18 @@ function mockAudio() {
   return { audio, context, gains, stats: () => ({ starts, closes, creates }) };
 }
 void test('audio stays locked until interaction and initializes only once', () => {
-  const { audio, stats } = mockAudio();
+  const { audio, stats, gains } = mockAudio();
   audio.tick(1);
   assert.equal(stats().creates, 0);
   audio.unlock();
   audio.unlock();
   assert.equal(stats().creates, 1);
+  assert.equal(gains[1].gain.value, 0);
   const before = stats().starts;
   audio.tick(1);
-  assert.ok(stats().starts > before);
+  assert.equal(stats().starts, before);
+  audio.setMusic(true);
+  assert.equal(gains[1].gain.value, 0.65);
   audio.dispose();
   assert.equal(stats().closes, 1);
 });
@@ -154,6 +157,7 @@ void test('swishes are speed-gated and throttled; hidden audio pauses', () => {
 void test('voice ducking restores music without overriding mute', () => {
   const { audio, gains } = mockAudio();
   audio.unlock();
+  audio.setMusic(true);
   audio.duck(true);
   assert.equal(gains[1].gain.value, 0.18);
   audio.duck(false);

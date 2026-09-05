@@ -12,7 +12,7 @@ export class DojoAudio {
   private effectsBus: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private effects = true;
-  private music = true;
+  private music = false;
   private ducked = false;
   private volume = 0.5;
   private nextBeat = 0;

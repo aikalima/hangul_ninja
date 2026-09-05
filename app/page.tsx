@@ -34,7 +34,7 @@ export default function Home() {
   const [xr, setXR] = useState(false);
   const [error, setError] = useState('');
   const [sound, setSound] = useState(true);
-  const [music, setMusic] = useState(true);
+  const [music, setMusic] = useState(false);
   const [masterVoice, setMasterVoice] = useState(true);
   const [pronunciation, setPronunciation] =
     useState<PronunciationMode>('sound');
@@ -359,8 +359,8 @@ export default function Home() {
           </div>
         </div>
         <p className="audio-hint">
-          Music and effects start with your first interaction. Headphones bring
-          the sword sounds into your space.
+          Music is off by default. Turn it on anytime. Headphones bring the
+          sword sounds into your space.
         </p>
         <section className="vr-strip">
           <div className="vr-icon">
