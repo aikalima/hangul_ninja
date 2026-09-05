@@ -526,16 +526,16 @@ export function createDojo(
         if (stage === 'review-active') {
           review.complete(performance.now());
           syncReview();
-        } else
-          stage =
-            characterIndex === characters.length - 1
-              ? 'level-complete'
-              : 'character-complete';
-        if (stage === 'character-complete')
-          nextCharacterAt = performance.now() + 3000;
+        } else {
+          stage = 'character-complete';
+          // Let the learner see the final completed glyph before covering it.
+          nextCharacterAt =
+            performance.now() +
+            (characterIndex === characters.length - 1 ? 2000 : 3000);
+        }
         voice.success(
           lesson.progress,
-          stage === 'level-complete',
+          characterIndex === characters.length - 1,
           followingLevel(levelIndex) === null,
         );
         celebration.play();
@@ -650,6 +650,16 @@ export function createDojo(
       return;
     }
     if (stage === 'character-complete' && !automatic) return;
+    if (
+      stage === 'character-complete' &&
+      characterIndex === characters.length - 1
+    ) {
+      nextCharacterAt = Infinity;
+      stage = 'level-complete';
+      lastStatus = '';
+      report();
+      return;
+    }
     nextCharacterAt = Infinity;
     if (stage === 'review-ready' || stage === 'review-failed') {
       audio.unlock();

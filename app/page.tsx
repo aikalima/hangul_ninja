@@ -31,6 +31,8 @@ export default function Home() {
     'closed' | 'welcome' | 'watching' | 'ready'
   >('closed');
   useEffect(() => {
+    // Mobile visitors enter the dojo directly; the first touch starts training.
+    if (window.matchMedia('(max-width: 720px)').matches) return;
     try {
       if (localStorage.getItem('hangul-ninja-welcome-v1') === 'done') return;
     } catch {
