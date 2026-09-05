@@ -220,8 +220,8 @@ export function createDojo(
   heading.texture.needsUpdate = true;
   heading.sprite.position.set(0, 0.89, 0);
   lessonRoot.add(heading.sprite);
-  const subtitle = makeText(1.9, 224);
-  subtitle.sprite.position.set(0, 0.92, 0.03);
+  const subtitle = makeText(1.65, 224);
+  subtitle.sprite.position.set(0, 1.02, 0.03);
   subtitle.sprite.visible = false;
   lessonRoot.add(subtitle.sprite);
   const reviewPanel = makeText(1.45, 360);
@@ -261,7 +261,7 @@ export function createDojo(
             ? followingLevel(levelIndex) === null
               ? VOICE_LINES.courseComplete
               : VOICE_LINES.levelComplete
-            : null);
+            : (masterLine ?? MASTER_WELCOME));
       lastStatus = '';
       report();
     },
@@ -474,7 +474,7 @@ export function createDojo(
         } else line = next;
       }
       sub.fillText(line, textCenter, y);
-      celebration.position(0.78, 0.92);
+      celebration.position(0.67, 1.02);
     }
     subtitle.texture.needsUpdate = true;
     const c = feedback.ctx;
@@ -1135,7 +1135,7 @@ export function createDojo(
       feedback.sprite.visible = false;
     }
     subtitle.sprite.position.y =
-      reviewScreen && stage !== 'level-complete' ? -0.88 : 0.92;
+      reviewScreen && stage !== 'level-complete' ? -0.88 : 1.02;
     renderer.render(scene, camera);
   });
   report();

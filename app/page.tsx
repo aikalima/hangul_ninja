@@ -158,10 +158,8 @@ export default function Home() {
               aria-live="polite"
               aria-atomic="true"
             >
-              <span hidden={!status.master}>MASTER</span>
-              <p lang="en" hidden={!status.master}>
-                {status.master?.en}
-              </p>
+              <span>MASTER</span>
+              <p lang="en">{status.master?.en ?? MASTER_WELCOME.en}</p>
               <span data-master-gesture aria-hidden="true" />
             </div>
             {!loaded && (
