@@ -3,13 +3,7 @@ import { buildEnvironment } from './environment';
 import { createAvatar } from './avatar';
 import { createKatana, KATANA_TIP, KATANA_TRAIL_INNER } from './katana';
 import type { FighterId } from '@/lib/fighters';
-import {
-  PATH,
-  TraceLesson,
-  FlowLesson,
-  type PracticeMode,
-  type TraceState,
-} from '@/lib/tracing';
+import { PATH, FlowLesson, type TraceState } from '@/lib/tracing';
 import { DojoAudio } from './audio';
 import { MasterVoice } from './voice';
 import { isFailedGesture, type VoiceLine } from '@/lib/voice-lines';
@@ -30,7 +24,6 @@ export type DojoAPI = {
   pronounce: () => void;
   setMusic: (v: boolean) => void;
   setVolume: (v: number) => void;
-  setMode: (mode: PracticeMode) => void;
   setFighter: (id: FighterId) => void;
   showBody: (visible: boolean) => void;
   dispose: () => void;
@@ -196,8 +189,7 @@ export function createDojo(
   arrow.texture.needsUpdate = true;
   arrow.sprite.position.set(-0.42, 0.59, 0.01);
   lessonRoot.add(arrow.sprite);
-  let mode: PracticeMode = 'flow';
-  let lesson: TraceLesson | FlowLesson = new FlowLesson();
+  const lesson = new FlowLesson();
   const audio = new DojoAudio();
   const effects = createEffects(scene, lessonRoot);
   let lastStatus = '',
@@ -223,7 +215,7 @@ export function createDojo(
     voice.intro();
   }
   function endGesture() {
-    if (isFailedGesture(mode, gestureStart, lesson.next, gestureDistance))
+    if (isFailedGesture(gestureStart, lesson.next, gestureDistance))
       voice.mistake();
     gestureDistance = 0;
     gesturePrevious = null;
@@ -241,24 +233,13 @@ export function createDojo(
     const watching = demoStart > 0;
     const phase = watching ? 'watching' : lesson.state;
     const progress = watching ? 0 : lesson.progress;
-    const message =
-      mode === 'flow' && !watching
-        ? phase === 'complete'
-          ? 'Combo complete. Two cuts, one character.'
-          : progress >= 50
-            ? 'Slash landed! Now cut downward.'
-            : 'Sweep left to right through the guide.'
-        : watching
-          ? 'Watch: right, then down.'
-          : phase === 'complete'
-            ? 'Beautiful. Your first Hangul stroke.'
-            : phase === 'retry'
-              ? 'Return to the circle and try again.'
-              : phase === 'tracing'
-                ? progress < 48
-                  ? 'Move right toward the corner.'
-                  : 'Turn downward. Keep holding.'
-                : 'Start at the glowing circle.';
+    const message = watching
+      ? 'Watch: right, then down.'
+      : phase === 'complete'
+        ? 'Combo complete. Two cuts, one character.'
+        : progress >= 50
+          ? 'Slash landed! Now cut downward.'
+          : 'Sweep left to right through the guide.';
     const key = `${phase}:${progress}`;
     if (key === lastStatus) return;
     lastStatus = key;
@@ -276,12 +257,8 @@ export function createDojo(
         (renderer.xr.isPresenting
           ? phase === 'complete'
             ? 'Press trigger to practice again'
-            : mode === 'flow'
-              ? 'Hold trigger to cut · Release to recover · Grip: recenter'
-              : 'Hold trigger to trace · Squeeze grip to recenter'
-          : mode === 'flow'
-            ? 'Drag right, then down · Release between cuts if needed'
-            : 'Hold & drag · Follow the light'),
+            : 'Hold trigger to cut · Release to recover · Grip: recenter'
+          : 'Drag right, then down · Release between cuts if needed'),
       512,
       110,
     );
@@ -686,7 +663,7 @@ export function createDojo(
     );
     audio.listener(listenerPosition, listenerForward, listenerUp);
     audio.tick(lesson.progress / 100);
-    effects.update(dt, elapsed, mode === 'flow', lesson.progress);
+    effects.update(dt, elapsed, true, lesson.progress);
     warm.intensity =
       9 + Math.sin(elapsed * 1.6) * 0.6 + Math.min(swordSpeed, 5) * 0.2;
     lanternMat.emissiveIntensity = 0.8 + Math.sin(elapsed * 2.1) * 0.1;
@@ -694,9 +671,7 @@ export function createDojo(
     (trail.material as THREE.MeshBasicMaterial).opacity =
       0.45 + Math.min(swordSpeed, 5) * 0.07;
     const idx =
-      mode === 'flow' && lesson.next === 21
-        ? 20
-        : Math.min(PATH.length - 1, lesson.next);
+      lesson.next === 21 ? 20 : Math.min(PATH.length - 1, lesson.next);
     target.position.set(PATH[idx].x, PATH[idx].y, 0.014);
     target.scale.setScalar(1 + Math.sin(elapsed * 4) * 0.15);
     target.visible = lesson.state !== 'complete';
@@ -717,11 +692,6 @@ export function createDojo(
     },
     showBody(visible) {
       avatar.show(visible);
-    },
-    setMode(value) {
-      mode = value;
-      lesson = value === 'flow' ? new FlowLesson() : new TraceLesson();
-      reset();
     },
     demonstrate() {
       reset();

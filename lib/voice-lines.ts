@@ -1,4 +1,3 @@
-import type { PracticeMode } from './tracing.ts';
 export const VOICE_LINES = {
   intro: { id: 'intro', file: 'giyeok', ko: '기역.', en: 'Giyeok — ㄱ.' },
   success: {
@@ -27,13 +26,7 @@ export const VOICE_LINES = {
   },
 } as const;
 export type VoiceLine = { id: string; file: string; ko: string; en: string };
-export function isFailedGesture(
-  mode: PracticeMode,
-  start: number,
-  end: number,
-  distance: number,
-) {
+export function isFailedGesture(start: number, end: number, distance: number) {
   if (distance < 0.18 || end === 41) return false;
-  if (mode === 'trace') return true;
   return start < 21 ? end < 21 : end < 41;
 }

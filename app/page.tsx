@@ -19,7 +19,6 @@ import {
   X,
 } from 'lucide-react';
 import { FIGHTERS, type FighterId } from '@/lib/fighters';
-import type { PracticeMode } from '@/lib/tracing';
 import type { DojoAPI, DojoStatus } from '@/components/dojo/engine';
 
 export default function Home() {
@@ -38,7 +37,6 @@ export default function Home() {
   const [music, setMusic] = useState(true);
   const [masterVoice, setMasterVoice] = useState(true);
   const [volume, setVolume] = useState(50);
-  const [mode, setMode] = useState<PracticeMode>('flow');
   const [fighter, setFighter] = useState<FighterId>('onyx');
   const [bodyVisible, setBodyVisible] = useState(true);
   const [help, setHelp] = useState(false);
@@ -113,18 +111,11 @@ export default function Home() {
             )}
             <div className="scene-caption">
               <span className="scene-line" />
-              <span>
-                {mode === 'flow'
-                  ? 'SWEEP. RECOVER. STRIKE.'
-                  : 'STAY PRESENT. FOLLOW THE STROKE.'}
-              </span>
+              <span>SWEEP. RECOVER. STRIKE.</span>
             </div>
             <div className="scene-bottom">
               <span>
-                <MousePointer2 size={16} />{' '}
-                {mode === 'flow'
-                  ? 'Drag right, then slash down'
-                  : 'Hold & drag to trace'}
+                <MousePointer2 size={16} /> Drag right, then slash down
               </span>
               <div>
                 <button
@@ -181,51 +172,20 @@ export default function Home() {
               <br />
               The first step in your Hangul journey.
             </p>
-            <div className="practice-modes" aria-label="Practice mode">
-              <button
-                disabled={!loaded}
-                aria-pressed={mode === 'flow'}
-                onClick={() => {
-                  api.current?.setMode('flow');
-                  setMode('flow');
-                }}
-              >
-                <Swords size={15} />
-                Flow cuts
-              </button>
-              <button
-                disabled={!loaded}
-                aria-pressed={mode === 'trace'}
-                onClick={() => {
-                  api.current?.setMode('trace');
-                  setMode('trace');
-                }}
-              >
-                Precise trace
-              </button>
-            </div>
             <div className="divider" />
             <div className="section-label">
               <span>THE MOVEMENT</span>
-              <span>
-                {mode === 'flow' ? '2 CUT COMBO' : '1 CONTINUOUS STROKE'}
-              </span>
+              <span>2 CUT COMBO</span>
             </div>
             <div className={`movement ${status.progress >= 50 ? 'done' : ''}`}>
               <span className="step-number">01</span>
               <div>
                 <strong>
-                  {mode === 'flow'
-                    ? status.progress >= 50
-                      ? '02 · Downward cut'
-                      : '01 · Rightward slash'
-                    : 'Across, then down'}
+                  {status.progress >= 50
+                    ? '02 · Downward cut'
+                    : '01 · Rightward slash'}
                 </strong>
-                <p>
-                  {mode === 'flow'
-                    ? 'Sweep across. Recover. Strike down.'
-                    : 'Start left. Move right. Turn down.'}
-                </p>
+                <p>Sweep across. Recover. Strike down.</p>
               </div>
               <div className="direction">
                 <ArrowRight size={18} />
@@ -235,9 +195,8 @@ export default function Home() {
             <div className="tip">
               <Sparkles size={17} />
               <p>
-                {mode === 'flow'
-                  ? 'Use broad, controlled sword arcs. Release between cuts to reset your stance. The first cut stays lit.'
-                  : 'Keep your sword moving through the corner. One smooth, unbroken stroke.'}
+                Use broad, controlled katana arcs. Release between cuts to reset
+                your stance. The first cut stays lit.
               </p>
             </div>
             <div className="master-caption" aria-live="polite">
@@ -286,9 +245,7 @@ export default function Home() {
               )}{' '}
               {status.phase === 'complete'
                 ? 'Practice again'
-                : mode === 'flow'
-                  ? 'Begin flow practice'
-                  : 'Begin practice'}
+                : 'Begin flow practice'}
               <ArrowRight size={18} />
             </button>
             <button
@@ -476,9 +433,8 @@ export default function Home() {
         <p>
           In Flow cuts, hold and drag right through the horizontal guide, then
           cut down the vertical guide. You can release between cuts to
-          reposition. In Precise trace, follow the guide continuously without
-          releasing. You can also use touch, or focus the dojo and use the arrow
-          keys while holding Space. Press R to restart.
+          reposition. You can also use touch, or focus the dojo and use the
+          arrow keys while holding Space. Press R to restart.
         </p>
         <h3>In Meta Quest</h3>
         <p>
@@ -486,9 +442,8 @@ export default function Home() {
           in place. Hold either controller’s trigger and move the sword tip
           across the guide with a controlled rightward slash, then a downward
           cut. Flow cuts accepts natural arcs and preserves the first cut when
-          you release. Precise trace requires one continuous stroke. After
-          completing, press the trigger to practice again. Squeeze the grip to
-          recenter the guide in front of you.
+          you release. After completing, press the trigger to practice again.
+          Squeeze the grip to recenter the guide in front of you.
         </p>
         <h3>The master</h3>
         <p>

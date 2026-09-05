@@ -839,32 +839,6 @@ footer > span:nth-child(2) {
   backdrop-filter: blur(9px);
 }
 
-.practice-modes {
-  display: flex;
-  margin-top: 18px;
-  padding: 3px;
-  background: #151c1a;
-  border: 1px solid #465044;
-  border-radius: 6px;
-  gap: 3px;
-}
-.practice-modes button {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  color: #a9b5a5;
-  padding: 9px 4px;
-  font-size: 12px;
-  border-radius: 4px;
-}
-.practice-modes button[aria-pressed='true'] {
-  background: #3b4533;
-  color: #f2dfb6;
-}
 .audio-controls {
   display: flex;
   align-items: center;
@@ -916,9 +890,6 @@ footer > span:nth-child(2) {
   .audio-hint {
     font-size: 11px;
     line-height: 1.6;
-  }
-  .practice-modes button {
-    font-size: 14px;
   }
 }
 

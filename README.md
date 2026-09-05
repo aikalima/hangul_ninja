@@ -1,6 +1,6 @@
 # Hangul Ninja
 
-WebXR prototype v0.6: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the default: a rightward slash, then a downward cut. Precise trace retains the continuous tracing lesson.
+WebXR prototype v0.6: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the only practice mode: a rightward slash, then a downward cut.
 
 ## Run locally
 
@@ -11,13 +11,13 @@ npm ci
 npm run dev -- --host 0.0.0.0
 ```
 
-Open the printed localhost URL. In Flow cuts, drag through the horizontal guide from left to right, then cut down through the vertical guide. Release between landed cuts to recover; partial cuts restart on release. Select Precise trace to draw continuously. Touch is supported. For keyboard input, focus the dojo, hold Space, and use arrow keys; R resets. “Watch the stroke” is a demonstration and does not earn completion. The first practice interaction unlocks audio. Separate music/effects toggles and a master volume slider are below the dojo.
+Open the printed localhost URL. In Flow cuts, drag through the horizontal guide from left to right, then cut down through the vertical guide. Release between landed cuts to recover; partial cuts restart on release. Touch is supported. For keyboard input, focus the dojo, hold Space, and use arrow keys; R resets. “Watch the stroke” is a demonstration and does not earn completion. The first practice interaction unlocks audio. Separate music/effects toggles and a master volume slider are below the dojo.
 
 ## Meta Quest Browser
 
 Open the hosted HTTPS URL in Quest Browser (sign in with the owning account for the private preview). Choose Enter VR and grant the browser permission. Localhost on a desktop does not refer to that desktop from the headset, and plain LAN HTTP does not satisfy WebXR's secure-context requirement.
 
-Use either controller: hold its trigger and sweep the sword tip right through the horizontal guide, then cut down. Flow mode uses swept collisions with a 14 cm path tolerance and 45 cm depth allowance; it preserves the first landed slash while you release and recover. Precise tracing keeps its tighter tolerances and continuous hold. Press trigger after success to repeat. Squeeze the grip to reposition the lesson in front of the current head pose. Exit using the Quest system menu. Stand or sit with a clear arm's-length space; there is no artificial locomotion.
+Use either controller: hold its trigger and sweep the sword tip right through the horizontal guide, then cut down. Flow mode uses swept collisions with a 14 cm path tolerance and 45 cm depth allowance; it preserves the first landed slash while you release and recover. Press trigger after success to repeat. Squeeze the grip to reposition the lesson in front of the current head pose. Exit using the Quest system menu. Stand or sit with a clear arm's-length space; there is no artificial locomotion.
 
 Implementation requests `immersive-vr` with `local-floor`, attaches swords to controller grip spaces, samples the actual blade tip in lesson-local coordinates, and renders guidance inside the XR scene. Head height and facing direction position the guide on entry and recenter. Haptics are optional. Static meshes are merged by material and the trail uses a fixed-size GPU buffer without post-processing.
 
@@ -30,7 +30,7 @@ npm run build
 npx oxlint app components/dojo lib/tracing.ts tests
 ```
 
-Fifteen tests cover precise strokes and flow cuts (order, arcs, recovery, stale poses, teleports, depth, and shortcuts) plus mocked audio lifecycle, independent mute buses, volume bounds, swish throttling, and visibility pause. These audio tests validate scheduling, not audible quality. The full scaffold lint command also scans generated, unused shadcn components; those have upstream lint findings.
+Fourteen tests cover flow cuts (order, arcs, recovery, stale poses, teleports, depth, and shortcuts) plus mocked audio lifecycle, independent mute buses, volume bounds, swish throttling, and visibility pause. These audio tests validate scheduling, not audible quality. The full scaffold lint command also scans generated, unused shadcn components; those have upstream lint findings.
 
 Physical Quest testing is still required for controller orientation/reach, session entry and exit, recentering, and sustained frame rate. Desktop rendering cannot certify headset comfort or device performance. Progress is per session, without saved accounts or scores.
 
@@ -67,3 +67,5 @@ Clips were synthesized locally with the installed Korean Yuna voice. No browser 
 The weapon is a curved, tapered katana with a diamond-section blade, subtle temper line, oval iron guard, brass fittings, and diamond-pattern handle wrap. Shared blade-tip landmarks drive both scoring and the 6 cm tip-only trail. Desktop placement compensates for the curve, keeping the actual rendered tip on the pointer's tracing position.
 
 Hands use rounded palms, curved finger segments, knuckles, and a wrapping thumb. Sleeves have shaped profiles; wrist guards are open plates. Elbows use a two-segment bend with a stable outward/downward pole while preserving controller hand positions. Arm lengths still adapt to uncalibrated reach; this remains a cosmetic estimated avatar, requiring headset clipping/comfort checks.
+
+Precise mode has been removed from the UI, engine, recognition code, and instructions. All practice uses the two-cut flow lesson.
