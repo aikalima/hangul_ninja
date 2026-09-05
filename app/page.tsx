@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { MASTER_WELCOME } from '@/lib/voice-lines';
-import { LEVELS, VOWELS } from '@/lib/levels';
+import { VOWELS } from '@/lib/levels';
 import type { DojoAPI, DojoStatus } from '@/components/dojo/engine';
 
 export default function Home() {
@@ -114,113 +114,6 @@ export default function Home() {
             <span /> WEBXR PROTOTYPE <b>v1.0</b>
           </div>
         </div>
-        <section className="level-roadmap" aria-label="Six learning levels">
-          {LEVELS.map((level, i) => (
-            <div
-              key={level.title}
-              className={i === 0 ? 'current-level' : ''}
-              aria-current={i === 0 ? 'step' : undefined}
-            >
-              <span>
-                LEVEL {i + 1} ·{' '}
-                {i === 0
-                  ? finished
-                    ? 'COMPLETE'
-                    : 'AVAILABLE'
-                  : 'COMING SOON'}
-              </span>
-              <strong>{level.title}</strong>
-              <p lang="ko">{level.characters}</p>
-            </div>
-          ))}
-        </section>
-        <section className="level-banner" aria-live="polite">
-          <div>
-            <span className="eyebrow">
-              {reviewing
-                ? 'INTERIM CHALLENGE · TIMED REVIEW'
-                : finished
-                  ? 'LEVEL COMPLETE'
-                  : stage === 'intro'
-                    ? 'A NEW LEVEL BEGINS'
-                    : 'LEVEL 1 · BASIC VOWELS'}
-            </span>
-            <h2>
-              {reviewing
-                ? stage === 'review-failed'
-                  ? 'Time’s up. Try the mix again.'
-                  : stage === 'review-ready'
-                    ? 'Mix it up before you move on.'
-                    : 'Trace it before time runs out.'
-                : finished
-                  ? 'Review passed. Level 1 complete.'
-                  : stage === 'intro'
-                    ? 'Welcome to Level 1'
-                    : `${vowel.glyph} · ${vowel.roman}`}
-            </h2>
-            <p>
-              {reviewing
-                ? 'Every character must be completed in time. Level 1 mixes its six vowels; later reviews mix the current and previous level. A timeout restarts the review.'
-                : finished
-                  ? 'Timed review passed! You are ready for Level 2: Basic consonants (coming soon).'
-                  : stage === 'intro'
-                    ? 'Learn six vowels through flowing katana cuts. Follow the numbered strokes, then move to the next character.'
-                    : `${doneCount} of 6 characters complete · ${vowel.directions.join(' → ')}`}
-            </p>
-          </div>
-          <div
-            className="vowel-progress"
-            aria-label={`${doneCount} of 6 characters complete`}
-          >
-            {VOWELS.map((v, i) => (
-              <span
-                key={v.roman}
-                className={
-                  i < doneCount ? 'learned' : i === index ? 'current' : ''
-                }
-              >
-                {v.glyph}
-                <small>{i < doneCount ? '✓' : v.roman}</small>
-              </span>
-            ))}
-          </div>
-        </section>
-        {reviewing && (
-          <section className="review-controls" aria-label="Timed review">
-            <strong>
-              {stage === 'review-countdown'
-                ? `Get ready · ${Math.ceil(status.reviewRemaining ?? 3)}`
-                : stage === 'review-active'
-                  ? `${(status.reviewRemaining ?? 0).toFixed(1)}s left`
-                  : stage === 'review-between'
-                    ? 'Correct! Next…'
-                    : stage === 'review-failed'
-                      ? 'Review not passed'
-                      : 'Six characters · shuffled'}
-            </strong>
-            <span>
-              {status.reviewIndex ?? 0} / {status.reviewTotal ?? 6} passed
-            </span>
-            <label>
-              Seconds per character{' '}
-              <input
-                type="number"
-                min="1"
-                max="10"
-                step="1"
-                value={reviewSeconds}
-                disabled={timed}
-                onChange={(e) =>
-                  api.current?.setReviewSeconds(Number(e.target.value) || 3)
-                }
-              />
-            </label>
-            <p>
-              Complete every stroke in order. Release and re-grip for the next
-              character.
-            </p>
-          </section>
-        )}
         <div className="dojo-layout">
           <section className="viewport-shell" aria-label="Interactive 3D dojo">
             <div ref={host} className="scene" />
@@ -283,6 +176,73 @@ export default function Home() {
               <span>LEVEL 1 · BASIC VOWELS</span>
               <span className="lesson-number">{index + 1} / 06</span>
             </div>
+            <div
+              className="vowel-progress"
+              aria-label={`${doneCount} of 6 lesson characters complete`}
+            >
+              {VOWELS.map((v, i) => (
+                <span
+                  key={v.roman}
+                  lang="ko"
+                  aria-current={i === index ? 'step' : undefined}
+                  className={
+                    i === index && !finished
+                      ? 'current'
+                      : i < doneCount
+                        ? 'learned'
+                        : ''
+                  }
+                >
+                  {v.glyph}
+                  <small>{i < doneCount ? '✓' : v.roman}</small>
+                </span>
+              ))}
+            </div>
+            <p className="level-status" aria-live="polite">
+              {finished
+                ? 'Review passed · Level 1 complete. Level 2 coming soon.'
+                : reviewing
+                  ? 'Timed review · Pass every character to finish the level.'
+                  : stage === 'intro'
+                    ? 'Level 1 begins · Six basic vowels'
+                    : `${doneCount} / 6 characters complete`}
+            </p>
+            {reviewing && (
+              <section className="review-controls" aria-label="Timed review">
+                <strong>
+                  {stage === 'review-countdown'
+                    ? `Get ready · ${Math.ceil(status.reviewRemaining ?? 3)}`
+                    : stage === 'review-active'
+                      ? `${(status.reviewRemaining ?? 0).toFixed(1)}s left`
+                      : stage === 'review-between'
+                        ? 'Correct! Next…'
+                        : stage === 'review-failed'
+                          ? 'Review not passed'
+                          : 'Six characters · shuffled'}
+                </strong>
+                <span>
+                  {status.reviewIndex ?? 0} / {status.reviewTotal ?? 6} passed
+                </span>
+                <label>
+                  Seconds per character{' '}
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={reviewSeconds}
+                    disabled={timed}
+                    onChange={(e) =>
+                      api.current?.setReviewSeconds(Number(e.target.value) || 3)
+                    }
+                  />
+                </label>
+                <p>
+                  Complete every stroke in order. Release and re-grip for the
+                  next character.
+                </p>
+              </section>
+            )}
             <div className="character-title">
               <span lang="ko">{vowel.glyph}</span>
               <div>
