@@ -1,7 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isFailedGesture, VOICE_LINES } from '../lib/voice-lines.ts';
+import {
+  isFailedGesture,
+  pronunciationLine,
+  VOICE_LINES,
+} from '../lib/voice-lines.ts';
 void test('the master permits completed flow cuts and ignores clicks', () => {
   assert.equal(isFailedGesture(0, 21, 1), false);
   assert.equal(isFailedGesture(21, 41, 1), false);
@@ -36,4 +40,16 @@ void test('all voiced Korean lines have English captions and nonempty PCM assets
   }
   assert.match(VOICE_LINES.intro.ko, /기역/);
   assert.match(VOICE_LINES.success.ko, /기역/);
+});
+
+void test('pronunciation choice selects sound or name for both lesson cues', () => {
+  for (const cue of ['intro', 'success'] as const) {
+    assert.match(pronunciationLine('name', cue).ko, /기역/);
+    assert.match(pronunciationLine('sound', cue).ko, /그/);
+    assert.doesNotMatch(pronunciationLine('sound', cue).ko, /기역/);
+    assert.notEqual(
+      pronunciationLine('name', cue).file,
+      pronunciationLine('sound', cue).file,
+    );
+  }
 });

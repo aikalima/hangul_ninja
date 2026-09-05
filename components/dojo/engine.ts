@@ -6,7 +6,11 @@ import type { FighterId } from '@/lib/fighters';
 import { PATH, FlowLesson, type TraceState } from '@/lib/tracing';
 import { DojoAudio } from './audio';
 import { MasterVoice } from './voice';
-import { isFailedGesture, type VoiceLine } from '@/lib/voice-lines';
+import {
+  isFailedGesture,
+  type PronunciationMode,
+  type VoiceLine,
+} from '@/lib/voice-lines';
 import { createEffects } from './effects';
 
 export type DojoStatus = {
@@ -21,6 +25,7 @@ export type DojoAPI = {
   enterVR: () => Promise<void>;
   setSound: (v: boolean) => void;
   setVoice: (v: boolean) => void;
+  setPronunciation: (mode: PronunciationMode) => void;
   pronounce: () => void;
   setMusic: (v: boolean) => void;
   setVolume: (v: number) => void;
@@ -739,6 +744,9 @@ export function createDojo(
     },
     setVoice(v) {
       voice.setEnabled(v);
+    },
+    setPronunciation(mode) {
+      voice.setPronunciation(mode);
     },
     pronounce() {
       audio.unlock();

@@ -1043,3 +1043,45 @@ footer > span:nth-child(2) {
     justify-content: flex-start;
   }
 }
+
+.pronunciation-choice {
+  border: 0;
+  padding: 0;
+  margin: 16px 0;
+  min-width: 0;
+}
+.pronunciation-choice legend {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #aeb9b4;
+  margin-bottom: 9px;
+}
+.pronunciation-choice > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pronunciation-choice label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 10px;
+  border: 1px solid #48534b;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.pronunciation-choice label:has(input:checked) {
+  border-color: #d9b978;
+  background: #d9b97812;
+  color: #e9d4a8;
+}
+.pronunciation-choice input {
+  accent-color: #d9b978;
+}
+.pronunciation-choice p {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #aeb9b4;
+  margin-top: 8px;
+}

@@ -1,8 +1,14 @@
-import { VOICE_LINES, type VoiceLine } from '@/lib/voice-lines';
+import {
+  VOICE_LINES,
+  pronunciationLine,
+  type PronunciationMode,
+  type VoiceLine,
+} from '@/lib/voice-lines';
 
 export class MasterVoice {
   private player: HTMLAudioElement;
   private enabled = true;
+  private pronunciation: PronunciationMode = 'sound';
   private introduced = false;
   private lastMistake = -Infinity;
   private mistakeIndex = 0;
@@ -14,7 +20,7 @@ export class MasterVoice {
   ) {
     this.onLine = privateLine;
     this.duck = privateDuck;
-    this.player = new Audio('/audio/giyeok.wav');
+    this.player = new Audio('/audio/geu.wav');
     this.player.preload = 'auto';
     this.player.volume = 0.5;
     this.player.onended = () => {
@@ -69,11 +75,11 @@ export class MasterVoice {
   intro(force = false) {
     if (force || !this.introduced) {
       this.introduced = true;
-      this.speak(VOICE_LINES.intro);
+      this.speak(pronunciationLine(this.pronunciation, 'intro'));
     }
   }
   success() {
-    this.speak(VOICE_LINES.success);
+    this.speak(pronunciationLine(this.pronunciation, 'success'));
   }
   mistake() {
     const now = performance.now();
@@ -84,6 +90,10 @@ export class MasterVoice {
         this.mistakeIndex++ % 3
       ],
     );
+  }
+  setPronunciation(value: PronunciationMode) {
+    this.pause();
+    this.pronunciation = value;
   }
   setEnabled(value: boolean) {
     this.enabled = value;

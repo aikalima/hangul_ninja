@@ -6,6 +6,18 @@ export const VOICE_LINES = {
     ko: '잘했다. 기역!',
     en: 'Well done. Giyeok!',
   },
+  soundIntro: {
+    id: 'sound-intro',
+    file: 'geu',
+    ko: '그.',
+    en: 'ㄱ sound in 그 (geu).',
+  },
+  soundSuccess: {
+    id: 'sound-success',
+    file: 'success-geu',
+    ko: '잘했다. 그!',
+    en: 'Well done. ㄱ sound in 그 (geu).',
+  },
   focus: {
     id: 'focus',
     file: 'focus',
@@ -29,4 +41,16 @@ export type VoiceLine = { id: string; file: string; ko: string; en: string };
 export function isFailedGesture(start: number, end: number, distance: number) {
   if (distance < 0.18 || end === 41) return false;
   return start < 21 ? end < 21 : end < 41;
+}
+
+export type PronunciationMode = 'sound' | 'name';
+export function pronunciationLine(
+  mode: PronunciationMode,
+  cue: 'intro' | 'success',
+): VoiceLine {
+  return mode === 'name'
+    ? VOICE_LINES[cue]
+    : cue === 'intro'
+      ? VOICE_LINES.soundIntro
+      : VOICE_LINES.soundSuccess;
 }

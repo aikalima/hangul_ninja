@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { FIGHTERS, type FighterId } from '@/lib/fighters';
+import type { PronunciationMode } from '@/lib/voice-lines';
 import type { DojoAPI, DojoStatus } from '@/components/dojo/engine';
 
 export default function Home() {
@@ -36,6 +37,8 @@ export default function Home() {
   const [sound, setSound] = useState(true);
   const [music, setMusic] = useState(true);
   const [masterVoice, setMasterVoice] = useState(true);
+  const [pronunciation, setPronunciation] =
+    useState<PronunciationMode>('sound');
   const [volume, setVolume] = useState(50);
   const [fighter, setFighter] = useState<FighterId>('onyx');
   const [bodyVisible, setBodyVisible] = useState(true);
@@ -167,6 +170,30 @@ export default function Home() {
                 </p>
               </div>
             </div>
+            <fieldset className="pronunciation-choice" disabled={!loaded}>
+              <legend>VOICE PRONUNCIATION</legend>
+              <div>
+                {(['sound', 'name'] as const).map((mode) => (
+                  <label key={mode}>
+                    <input
+                      type="radio"
+                      name="pronunciation"
+                      value={mode}
+                      checked={pronunciation === mode}
+                      onChange={() => {
+                        setPronunciation(mode);
+                        api.current?.setPronunciation(mode);
+                        api.current?.pronounce();
+                      }}
+                    />
+                    {mode === 'sound' ? 'Sound · 그' : 'Name · 기역'}
+                  </label>
+                ))}
+              </div>
+              <p>
+                Sound uses 그 (geu): ㄱ with a short vowel to make it audible.
+              </p>
+            </fieldset>
             <p className="lesson-intro">
               A single stroke. A sharp turn.
               <br />
@@ -203,7 +230,8 @@ export default function Home() {
               <span>THE MASTER</span>
               <strong lang="ko">{status.master?.ko ?? '준비됐느냐?'}</strong>
               <p>
-                {status.master?.en ?? 'Ready? Begin practice to hear giyeok.'}
+                {status.master?.en ??
+                  `Ready? Begin practice to hear ${pronunciation === 'sound' ? 'the ㄱ sound.' : 'giyeok.'}`}
               </p>
             </div>
             <div className="progress-section">
@@ -447,10 +475,11 @@ export default function Home() {
         </p>
         <h3>The master</h3>
         <p>
-          The master pronounces 기역 at the beginning of practice and after a
-          completed character. Mistakes earn a stern Korean correction with
-          English subtitles. Valid recovery between flow cuts is allowed. Use
-          Hear ㄱ to replay the name or the Master toggle to mute narration.
+          Choose Sound to hear ㄱ in 그 (geu), or Name to hear 기역 (giyeok).
+          Your choice plays at the beginning of practice and after a completed
+          character. Mistakes earn a stern Korean correction with English
+          subtitles. Valid recovery between flow cuts is allowed. Use Hear ㄱ to
+          replay your choice or the Master toggle to mute narration.
         </p>
         <h3>Your fighter</h3>
         <p>
