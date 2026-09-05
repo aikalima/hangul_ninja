@@ -243,7 +243,7 @@ export function createDojo(
   const voice = new MasterVoice(
     (line) => {
       if (disposed) return;
-      masterLine = line;
+      masterLine = line ?? (stage === 'intro' ? MASTER_WELCOME : null);
       lastStatus = '';
       report();
     },
@@ -296,7 +296,7 @@ export function createDojo(
               : stage === 'review-failed'
                 ? 'TIME UP · Retry the shuffled review to advance.'
                 : stage === 'intro'
-                  ? 'LEVEL 1 BEGINS · Press trigger to start.'
+                  ? MASTER_WELCOME.en
                   : stage === 'level-complete'
                     ? 'REVIEW PASSED · Level 1 complete · Level 2 coming soon.'
                     : stage === 'character-complete'
@@ -333,7 +333,7 @@ export function createDojo(
         : stage === 'level-complete'
           ? 'LEVEL 1 COMPLETE'
           : stage === 'intro'
-            ? 'LEVEL 1 · BASIC VOWELS'
+            ? ''
             : `LEVEL 1 · ${characterIndex + 1}/6 · ${vowel.glyph} ${vowel.roman}`,
       512,
       63,
@@ -345,7 +345,7 @@ export function createDojo(
         : stage === 'level-complete'
           ? 'ㅏ  ㅓ  ㅗ  ㅜ  ㅡ  ㅣ · All six learned'
           : stage === 'intro'
-            ? 'Press trigger to begin · ㅏ ㅓ ㅗ ㅜ ㅡ ㅣ'
+            ? ''
             : vowel.directions.join(' · '),
       512,
       112,
@@ -989,7 +989,10 @@ export function createDojo(
       m.material = m.userData.end < lesson.next ? completeMat : guideMat;
     });
     subtitle.sprite.visible = !!masterLine && renderer.xr.isPresenting;
-    heading.sprite.visible = !subtitle.sprite.visible;
+    heading.sprite.visible =
+      !subtitle.sprite.visible &&
+      (stage.startsWith('review-') || stage === 'level-complete');
+    feedback.sprite.visible = stage !== 'intro';
     renderer.render(scene, camera);
   });
   report();

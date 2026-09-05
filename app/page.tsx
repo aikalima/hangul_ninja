@@ -18,6 +18,7 @@ import {
   VolumeX,
   X,
 } from 'lucide-react';
+import { MASTER_WELCOME } from '@/lib/voice-lines';
 import { LEVELS, VOWELS } from '@/lib/levels';
 import type { DojoAPI, DojoStatus } from '@/components/dojo/engine';
 
@@ -29,6 +30,7 @@ export default function Home() {
     progress: 0,
     phase: 'ready',
     message: 'Level 1 · Six basic vowels',
+    master: MASTER_WELCOME,
     stage: 'intro',
     characterIndex: 0,
     cutIndex: 0,

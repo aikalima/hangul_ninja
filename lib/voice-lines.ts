@@ -96,3 +96,10 @@ export function encouragementFor(completions: number): VoiceLine | null {
   ];
   return lines[(completions / 3 - 1) % lines.length];
 }
+
+export const MASTER_WELCOME: VoiceLine = {
+  id: 'welcome',
+  file: '',
+  ko: '검을 들어라. 빛나는 획을 따라라. 수련을 시작하자!',
+  en: 'Take up your katana. Follow the glowing strokes. Your training begins.',
+};
