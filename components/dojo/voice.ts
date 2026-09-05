@@ -12,6 +12,22 @@ export class MasterVoice {
   private pronunciation: PronunciationMode = 'sound';
   private introduced = false;
   private completed = false;
+  private character: { spoken: string; roman: string; glyph: string } | null =
+    null;
+  setCharacter(value: { spoken: string; roman: string; glyph: string }) {
+    this.pause();
+    this.character = value;
+  }
+  private characterLine(cue: 'intro' | 'success'): VoiceLine {
+    return this.character
+      ? {
+          id: cue,
+          file: 'vowel-' + this.character.roman,
+          ko: this.character.spoken,
+          en: this.character.glyph + ' · ' + this.character.roman,
+        }
+      : pronunciationLine(this.pronunciation, cue);
+  }
   private completions = 0;
   private pendingPraise: VoiceLine | null = null;
   private lastMistake = -Infinity;
@@ -45,7 +61,7 @@ export class MasterVoice {
         this.current
           ? {
               ...this.current,
-              en: this.current.en + ' (Voice unavailable; try Hear ㄱ.)',
+              en: this.current.en + ' (Voice unavailable; try Hear.)',
             }
           : null,
       );
@@ -79,7 +95,7 @@ export class MasterVoice {
         this.duck(false);
         this.onLine({
           ...line,
-          en: line.en + ' (Tap Hear ㄱ to enable voice.)',
+          en: line.en + ' (Tap Hear to enable voice.)',
         });
       }
     });
@@ -87,7 +103,7 @@ export class MasterVoice {
   intro() {
     if (!this.introduced) {
       this.introduced = true;
-      this.speak(pronunciationLine(this.pronunciation, 'intro'));
+      this.speak(this.characterLine('intro'));
     }
   }
   beginCharacter() {
@@ -96,12 +112,12 @@ export class MasterVoice {
     this.intro();
   }
   replay() {
-    this.speak(pronunciationLine(this.pronunciation, 'intro'));
+    this.speak(this.characterLine('intro'));
   }
   success(progress: number) {
     if (progress < 100 || this.completed) return;
     this.completed = true;
-    this.speak(pronunciationLine(this.pronunciation, 'success'));
+    this.speak(this.characterLine('success'));
     this.pendingPraise = this.enabled
       ? encouragementFor(++this.completions)
       : null;
@@ -110,11 +126,7 @@ export class MasterVoice {
     const now = performance.now();
     if (now - this.lastMistake < 4500) return;
     this.lastMistake = now;
-    this.speak(
-      [VOICE_LINES.focus, VOICE_LINES.sword, VOICE_LINES.order][
-        this.mistakeIndex++ % 3
-      ],
-    );
+    this.speak([VOICE_LINES.focus, VOICE_LINES.sword][this.mistakeIndex++ % 2]);
   }
   setPronunciation(value: PronunciationMode) {
     this.pause();

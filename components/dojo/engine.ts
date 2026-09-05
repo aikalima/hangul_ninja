@@ -1,14 +1,11 @@
 import * as THREE from 'three';
 import { buildEnvironment } from './environment';
 import { createKatana, KATANA_TIP, KATANA_TRAIL_INNER } from './katana';
-import { PATH, FlowLesson, type TraceState } from '@/lib/tracing';
+import type { TraceState } from '@/lib/tracing';
+import { VOWELS, VowelLesson } from '@/lib/levels';
 import { DojoAudio } from './audio';
 import { MasterVoice } from './voice';
-import {
-  isFailedGesture,
-  type PronunciationMode,
-  type VoiceLine,
-} from '@/lib/voice-lines';
+import { type PronunciationMode, type VoiceLine } from '@/lib/voice-lines';
 import { createCelebration } from './celebration';
 import { createEffects } from './effects';
 
@@ -17,9 +14,13 @@ export type DojoStatus = {
   phase: TraceState | 'watching';
   message: string;
   master?: VoiceLine | null;
+  characterIndex?: number;
+  stage?: 'intro' | 'active' | 'character-complete' | 'level-complete';
+  cutIndex?: number;
 };
 export type DojoAPI = {
   reset: () => void;
+  advance: () => void;
   demonstrate: () => void;
   enterVR: () => Promise<void>;
   setSound: (v: boolean) => void;
@@ -112,13 +113,28 @@ export function createDojo(
     parent.add(m);
     return m;
   }
+  let characterIndex = 0;
+  let stage: NonNullable<DojoStatus['stage']> = 'intro';
+  let PATH = VOWELS[0].cuts.flat();
+  const guideRoot = new THREE.Group();
+  lessonRoot.add(guideRoot);
   const guideSegments: THREE.Mesh[] = [];
-  for (let i = 1; i < PATH.length; i++) {
-    const a = new THREE.Vector3(PATH[i - 1].x, PATH[i - 1].y, 0),
-      b = new THREE.Vector3(PATH[i].x, PATH[i].y, 0);
-    guideSegments.push(segment(a, b, 0.011, guideMat, lessonRoot));
-    segment(a, b, 0.035, glowMat, lessonRoot);
+  function rebuildGuide() {
+    for (const child of guideRoot.children) {
+      (child as THREE.Mesh).geometry.dispose();
+    }
+    guideRoot.clear();
+    guideSegments.length = 0;
+    for (let i = 1; i < PATH.length; i++) {
+      if (i % 21 === 0) continue;
+      const a = new THREE.Vector3(PATH[i - 1].x, PATH[i - 1].y, 0),
+        b = new THREE.Vector3(PATH[i].x, PATH[i].y, 0);
+      guideSegments.push(segment(a, b, 0.011, guideMat, guideRoot));
+      guideSegments.at(-1)!.userData.end = i;
+      segment(a, b, 0.035, glowMat, guideRoot);
+    }
   }
+  rebuildGuide();
   const gridMat = new THREE.LineBasicMaterial({
     color: '#d6ceaa',
     transparent: true,
@@ -173,10 +189,10 @@ export function createDojo(
   heading.ctx.textAlign = 'center';
   heading.ctx.fillStyle = '#e6d5ac';
   heading.ctx.font = '500 33px Arial';
-  heading.ctx.fillText('ㄱ   /   GIYEOK', 512, 63);
+  heading.ctx.fillText('LEVEL 1 · BASIC VOWELS', 512, 63);
   heading.ctx.fillStyle = '#b9bbaa';
   heading.ctx.font = '19px Arial';
-  heading.ctx.fillText('ONE STROKE. ACROSS, THEN DOWN.', 512, 112);
+  heading.ctx.fillText('ㅏ ㅓ ㅗ ㅜ ㅡ ㅣ', 512, 112);
   heading.texture.needsUpdate = true;
   heading.sprite.position.set(0, 0.89, 0);
   lessonRoot.add(heading.sprite);
@@ -195,7 +211,7 @@ export function createDojo(
   arrow.texture.needsUpdate = true;
   arrow.sprite.position.set(-0.42, 0.59, 0.01);
   lessonRoot.add(arrow.sprite);
-  const lesson = new FlowLesson();
+  const lesson = new VowelLesson(VOWELS[0].cuts);
   const audio = new DojoAudio();
   const effects = createEffects(scene, lessonRoot);
   const celebration = createCelebration(
@@ -216,17 +232,23 @@ export function createDojo(
     },
     (active) => audio.duck(active),
   );
+  voice.setCharacter(VOWELS[0]);
   let gestureStart = 0,
     gestureDistance = 0,
     gesturePrevious: THREE.Vector3 | null = null;
   function beginGesture() {
-    gestureStart = lesson.next;
+    if (stage === 'intro') advance();
+    gestureStart = lesson.completedCuts;
     gestureDistance = 0;
     gesturePrevious = null;
     voice.intro();
   }
   function endGesture() {
-    if (isFailedGesture(gestureStart, lesson.next, gestureDistance))
+    if (
+      stage === 'active' &&
+      gestureDistance >= 0.18 &&
+      lesson.completedCuts === gestureStart
+    )
       voice.mistake();
     gestureDistance = 0;
     gesturePrevious = null;
@@ -244,17 +266,53 @@ export function createDojo(
     const watching = demoStart > 0;
     const phase = watching ? 'watching' : lesson.state;
     const progress = watching ? 0 : lesson.progress;
-    const message = watching
-      ? 'Watch: right, then down.'
-      : phase === 'complete'
-        ? 'Combo complete. Two cuts, one character.'
-        : progress >= 50
-          ? 'Slash landed! Now cut downward.'
-          : 'Sweep left to right through the guide.';
-    const key = `${phase}:${progress}`;
+    const vowel = VOWELS[characterIndex];
+    const message =
+      stage === 'intro'
+        ? 'LEVEL 1 BEGINS · Press trigger to start.'
+        : stage === 'level-complete'
+          ? 'LEVEL 1 COMPLETE · Trigger: replay · Level 2 coming soon.'
+          : stage === 'character-complete'
+            ? `${vowel.glyph} complete · Press trigger or Next character.`
+            : watching
+              ? `Watch ${vowel.glyph}: follow each cut in order.`
+              : `${Math.min(lesson.completedCuts + 1, vowel.cuts.length)} / ${vowel.cuts.length} · ${vowel.directions[lesson.completedCuts] ?? 'Complete'}`;
+    const key = `${stage}:${characterIndex}:${phase}:${progress}`;
     if (key === lastStatus) return;
     lastStatus = key;
-    onStatus({ phase, progress, message, master: masterLine });
+    onStatus({
+      phase,
+      progress,
+      message,
+      master: masterLine,
+      characterIndex,
+      stage,
+      cutIndex: lesson.completedCuts,
+    });
+    heading.ctx.clearRect(0, 0, 1024, 160);
+    heading.ctx.textAlign = 'center';
+    heading.ctx.fillStyle = '#e6d5ac';
+    heading.ctx.font = '500 36px Arial';
+    heading.ctx.fillText(
+      stage === 'level-complete'
+        ? 'LEVEL 1 COMPLETE'
+        : stage === 'intro'
+          ? 'LEVEL 1 · BASIC VOWELS'
+          : `LEVEL 1 · ${characterIndex + 1}/6 · ${vowel.glyph} ${vowel.roman}`,
+      512,
+      63,
+    );
+    heading.ctx.font = '22px Arial';
+    heading.ctx.fillText(
+      stage === 'level-complete'
+        ? 'ㅏ  ㅓ  ㅗ  ㅜ  ㅡ  ㅣ · All six learned'
+        : stage === 'intro'
+          ? 'Press trigger to begin · ㅏ ㅓ ㅗ ㅜ ㅡ ㅣ'
+          : vowel.directions.join(' · '),
+      512,
+      112,
+    );
+    heading.texture.needsUpdate = true;
     const sub = subtitle.ctx;
     sub.clearRect(0, 0, 1024, 224);
     if (masterLine) {
@@ -290,16 +348,16 @@ export function createDojo(
     c.textAlign = 'center';
     c.fillStyle = phase === 'complete' ? '#d4eab0' : '#f1dec0';
     c.font = '28px Arial';
-    c.fillText(masterLine?.ko ?? message, 512, 65);
+    c.fillText(masterLine?.ko ?? message, 512, 65, 1000);
     c.fillStyle = '#c8cbbb';
     c.font = '21px Arial';
     c.fillText(
       masterLine?.en ??
         (renderer.xr.isPresenting
           ? phase === 'complete'
-            ? 'Press trigger to practice again'
-            : 'Hold trigger to cut · Release to recover · Grip: recenter'
-          : 'Drag right, then down · Release between cuts if needed'),
+            ? 'Press trigger to continue'
+            : 'Hold trigger to cut · Release between strokes · Grip: recenter'
+          : 'Drag along each numbered cut · Release to reposition'),
       512,
       110,
     );
@@ -309,20 +367,26 @@ export function createDojo(
   }
   const hitPosition = new THREE.Vector3();
   function sample(p: THREE.Vector3) {
+    if (stage !== 'active' || demoStart) return;
     if (gesturePrevious)
       gestureDistance += Math.min(0.5, gesturePrevious.distanceTo(p));
     gesturePrevious = p.clone();
-    const before = lesson.next,
+    const before = lesson.completedCuts,
       previousState = lesson.state;
     lesson.sample(p);
-    const crossedCorner = before < 21 && lesson.next >= 21;
+    const crossedCorner = lesson.completedCuts > before;
     const complete =
       previousState !== 'complete' && lesson.state === 'complete';
     if (crossedCorner || complete) {
-      hitPosition.set(0.45, complete ? -0.45 : 0.45, 0);
+      const end = PATH[Math.max(0, lesson.next - 1)];
+      hitPosition.set(end.x, end.y, 0);
       lessonRoot.localToWorld(hitPosition);
       audio.impact(hitPosition, complete);
       if (complete) {
+        stage =
+          characterIndex === VOWELS.length - 1
+            ? 'level-complete'
+            : 'character-complete';
         voice.success(lesson.progress);
         celebration.play();
       }
@@ -344,6 +408,7 @@ export function createDojo(
   }
   function reset() {
     demoStart = 0;
+    stage = 'active';
     lesson.reset();
     effects.reset();
     celebration.reset();
@@ -353,10 +418,24 @@ export function createDojo(
     gestureDistance = 0;
     gesturePrevious = null;
     trailCount = 0;
-    cursor.set(-0.45, 0.45, 0.025);
+    cursor.set(PATH[0].x, PATH[0].y, 0.025);
     lastStatus = '';
     report();
     if (!renderer.xr.isPresenting) canvas.focus({ preventScroll: true });
+  }
+  function advance() {
+    if (stage === 'active') {
+      reset();
+      return;
+    }
+    if (stage === 'character-complete') characterIndex++;
+    else if (stage === 'level-complete') characterIndex = 0;
+    const vowel = VOWELS[characterIndex];
+    lesson.cuts = vowel.cuts;
+    PATH = vowel.cuts.flat();
+    rebuildGuide();
+    voice.setCharacter(vowel);
+    reset();
   }
   const desktopSword = createKatana();
   scene.add(desktopSword);
@@ -388,7 +467,10 @@ export function createDojo(
       activeController = i;
       tipValid = false;
       trailCount = 0;
-      if (lesson.state === 'complete') reset();
+      if (lesson.state === 'complete') {
+        advance();
+        return;
+      }
       demoStart = 0;
       beginGesture();
     });
@@ -400,7 +482,6 @@ export function createDojo(
     });
     controller.addEventListener('squeezestart', () => {
       lesson.release();
-      reset();
       needsCenter = true;
     });
   });
@@ -511,7 +592,10 @@ export function createDojo(
     canvas.setPointerCapture(e.pointerId);
     pointerHeld = true;
     demoStart = 0;
-    if (lesson.state === 'complete') reset();
+    if (lesson.state === 'complete') {
+      advance();
+      return;
+    }
     beginGesture();
     movePointer(e);
   }
@@ -532,7 +616,10 @@ export function createDojo(
         audio.unlock();
         keyboardHeld = true;
         demoStart = 0;
-        if (lesson.state === 'complete') reset();
+        if (lesson.state === 'complete') {
+          advance();
+          return;
+        }
         beginGesture();
         sample(cursor);
       }
@@ -579,7 +666,8 @@ export function createDojo(
   renderer.xr.addEventListener('sessionstart', () => {
     needsCenter = true;
     desktopSword.visible = false;
-    reset();
+    lastStatus = '';
+    report();
   });
   renderer.xr.addEventListener('sessionend', () => {
     activeController = -1;
@@ -588,7 +676,8 @@ export function createDojo(
     lessonRoot.rotation.set(0, 0, 0);
     camera.position.set(0, 1.72, 0.85);
     camera.lookAt(0, 1.45, -1.3);
-    reset();
+    lastStatus = '';
+    report();
     const r = host.getBoundingClientRect();
     renderer.setSize(r.width, r.height);
   });
@@ -605,6 +694,7 @@ export function createDojo(
   const previousTip = new THREE.Vector3();
   let tipValid = false,
     swordSpeed = 0;
+  let lastArrowKey = '';
   let lastFrame = 0,
     elapsed = 0;
   renderer.setAnimationLoop((time) => {
@@ -626,9 +716,9 @@ export function createDojo(
     }
     if (demoStart) {
       const t = (elapsed - demoStart) / 3;
-      const p = Math.min(40, Math.max(0, t * 40)),
+      const p = Math.min(PATH.length - 1, Math.max(0, t * (PATH.length - 1))),
         i = Math.floor(p),
-        next = Math.min(40, i + 1);
+        next = i % 21 === 20 ? i : Math.min(PATH.length - 1, i + 1);
       cursor.set(
         THREE.MathUtils.lerp(PATH[i].x, PATH[next].x, p - i),
         THREE.MathUtils.lerp(PATH[i].y, PATH[next].y, p - i),
@@ -699,7 +789,7 @@ export function createDojo(
     listenerUp.set(0, 1, 0).transformDirection(view.matrixWorld);
     audio.listener(listenerPosition, listenerForward, listenerUp);
     audio.tick(lesson.progress / 100);
-    effects.update(dt, elapsed, true, lesson.progress);
+    effects.update(dt, elapsed, false, lesson.progress);
     celebration.update(
       dt,
       renderer.xr.isPresenting,
@@ -713,17 +803,33 @@ export function createDojo(
     glowMat.opacity = 0.13 + Math.min(swordSpeed, 5) * 0.025;
     (trail.material as THREE.MeshBasicMaterial).opacity =
       0.45 + Math.min(swordSpeed, 5) * 0.07;
-    const idx =
-      lesson.next === 21 ? 20 : Math.min(PATH.length - 1, lesson.next);
+    const idx = Math.min(PATH.length - 1, lesson.next);
     target.position.set(PATH[idx].x, PATH[idx].y, 0.014);
     target.scale.setScalar(1 + Math.sin(elapsed * 4) * 0.15);
     target.visible = lesson.state !== 'complete';
-    arrow.sprite.visible = lesson.next < 2 && !demoStart;
+    arrow.sprite.visible = stage === 'active' && !demoStart;
+    const activeCut =
+      VOWELS[characterIndex].cuts[
+        Math.min(lesson.completedCuts, VOWELS[characterIndex].cuts.length - 1)
+      ];
+    arrow.sprite.position.set(activeCut[0].x, activeCut[0].y + 0.13, 0.02);
+    const arrowKey = `${characterIndex}:${lesson.completedCuts}`;
+    if (arrowKey !== lastArrowKey) {
+      lastArrowKey = arrowKey;
+      arrow.ctx.clearRect(0, 0, 1024, 160);
+      arrow.ctx.fillStyle = '#f5d196';
+      arrow.ctx.fillText(
+        `${Math.min(lesson.completedCuts + 1, VOWELS[characterIndex].cuts.length)} · ${activeCut[20].x > activeCut[0].x ? '→' : '↓'}`,
+        512,
+        90,
+      );
+      arrow.texture.needsUpdate = true;
+    }
     if (demoStart) spark.position.copy(cursor);
     else spark.position.copy(target.position);
     spark.visible = lesson.state !== 'complete';
-    guideSegments.forEach((m, i) => {
-      m.material = i < lesson.next - 1 ? completeMat : guideMat;
+    guideSegments.forEach((m) => {
+      m.material = m.userData.end < lesson.next ? completeMat : guideMat;
     });
     subtitle.sprite.visible = !!masterLine && renderer.xr.isPresenting;
     heading.sprite.visible = !subtitle.sprite.visible;
@@ -732,6 +838,7 @@ export function createDojo(
   report();
   return {
     reset,
+    advance,
     demonstrate() {
       reset();
       demoStart = Math.max(0.001, elapsed);

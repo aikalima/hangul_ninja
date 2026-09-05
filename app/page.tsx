@@ -18,7 +18,7 @@ import {
   VolumeX,
   X,
 } from 'lucide-react';
-import type { PronunciationMode } from '@/lib/voice-lines';
+import { LEVELS, VOWELS } from '@/lib/levels';
 import type { DojoAPI, DojoStatus } from '@/components/dojo/engine';
 
 export default function Home() {
@@ -28,7 +28,10 @@ export default function Home() {
   const [status, setStatus] = useState<DojoStatus>({
     progress: 0,
     phase: 'ready',
-    message: 'Sweep left to right through the guide.',
+    message: 'Level 1 · Six basic vowels',
+    stage: 'intro',
+    characterIndex: 0,
+    cutIndex: 0,
   });
   const [loaded, setLoaded] = useState(false);
   const [xr, setXR] = useState(false);
@@ -36,8 +39,6 @@ export default function Home() {
   const [sound, setSound] = useState(true);
   const [music, setMusic] = useState(false);
   const [masterVoice, setMasterVoice] = useState(true);
-  const [pronunciation, setPronunciation] =
-    useState<PronunciationMode>('sound');
   const [volume, setVolume] = useState(50);
   const [help, setHelp] = useState(false);
   useEffect(() => {
@@ -64,6 +65,14 @@ export default function Home() {
     else dialog.current?.close();
   }, [help]);
   const reset = () => api.current?.reset();
+  const index = status.characterIndex ?? 0;
+  const vowel = VOWELS[index];
+  const stage = status.stage ?? 'intro';
+  const finished = stage === 'level-complete';
+  const doneCount = finished
+    ? 6
+    : index + (stage === 'character-complete' ? 1 : 0);
+  const advance = () => api.current?.advance();
   return (
     <main>
       <header className="topbar">
@@ -85,16 +94,77 @@ export default function Home() {
         <div className="page-heading">
           <div>
             <p className="eyebrow">
-              LESSON 01 <span>/</span> BASIC CONSONANTS
+              LEVEL 01 <span>/</span> BASIC VOWELS
             </p>
             <h1>
               Every stroke is a beginning<span>.</span>
             </h1>
           </div>
           <div className="prototype">
-            <span /> WEBXR PROTOTYPE <b>v0.6</b>
+            <span /> WEBXR PROTOTYPE <b>v1.0</b>
           </div>
         </div>
+        <section className="level-roadmap" aria-label="Six learning levels">
+          {LEVELS.map((level, i) => (
+            <div
+              key={level.title}
+              className={i === 0 ? 'current-level' : ''}
+              aria-current={i === 0 ? 'step' : undefined}
+            >
+              <span>
+                LEVEL {i + 1} ·{' '}
+                {i === 0
+                  ? finished
+                    ? 'COMPLETE'
+                    : 'AVAILABLE'
+                  : 'COMING SOON'}
+              </span>
+              <strong>{level.title}</strong>
+              <p lang="ko">{level.characters}</p>
+            </div>
+          ))}
+        </section>
+        <section className="level-banner" aria-live="polite">
+          <div>
+            <span className="eyebrow">
+              {finished
+                ? 'LEVEL COMPLETE'
+                : stage === 'intro'
+                  ? 'A NEW LEVEL BEGINS'
+                  : 'LEVEL 1 · BASIC VOWELS'}
+            </span>
+            <h2>
+              {finished
+                ? 'Six vowels. Foundation complete.'
+                : stage === 'intro'
+                  ? 'Welcome to Level 1'
+                  : `${vowel.glyph} · ${vowel.roman}`}
+            </h2>
+            <p>
+              {finished
+                ? 'You completed ㅏ ㅓ ㅗ ㅜ ㅡ ㅣ. Level 2: Basic consonants is coming soon.'
+                : stage === 'intro'
+                  ? 'Learn six vowels through flowing katana cuts. Follow the numbered strokes, then move to the next character.'
+                  : `${doneCount} of 6 characters complete · ${vowel.directions.join(' → ')}`}
+            </p>
+          </div>
+          <div
+            className="vowel-progress"
+            aria-label={`${doneCount} of 6 characters complete`}
+          >
+            {VOWELS.map((v, i) => (
+              <span
+                key={v.roman}
+                className={
+                  i < doneCount ? 'learned' : i === index ? 'current' : ''
+                }
+              >
+                {v.glyph}
+                <small>{i < doneCount ? '✓' : v.roman}</small>
+              </span>
+            ))}
+          </div>
+        </section>
         <div className="dojo-layout">
           <section className="viewport-shell" aria-label="Interactive 3D dojo">
             <div ref={host} className="scene" />
@@ -126,7 +196,7 @@ export default function Home() {
             </div>
             <div className="scene-bottom">
               <span>
-                <MousePointer2 size={16} /> Drag right, then slash down
+                <MousePointer2 size={16} /> Follow the numbered cuts
               </span>
               <div>
                 <button
@@ -154,13 +224,13 @@ export default function Home() {
           </section>
           <aside className="lesson-panel">
             <div className="lesson-overline">
-              <span>YOUR FIRST CHARACTER</span>
-              <span className="lesson-number">01 / 01</span>
+              <span>LEVEL 1 · BASIC VOWELS</span>
+              <span className="lesson-number">{index + 1} / 06</span>
             </div>
             <div className="character-title">
-              <span lang="ko">ㄱ</span>
+              <span lang="ko">{vowel.glyph}</span>
               <div>
-                <h2>Giyeok</h2>
+                <h2>{vowel.roman}</h2>
                 <button
                   className="hear-character"
                   disabled={!loaded}
@@ -171,83 +241,68 @@ export default function Home() {
                   }}
                 >
                   <Volume2 size={14} />
-                  Hear ㄱ
+                  Hear {vowel.glyph}
                 </button>
                 <p>
-                  기역 <span>·</span> “g” / “k” sound
+                  {vowel.spoken} <span>·</span> {vowel.roman} sound
                 </p>
               </div>
             </div>
-            <fieldset className="pronunciation-choice" disabled={!loaded}>
-              <legend>VOICE PRONUNCIATION</legend>
-              <div>
-                {(['sound', 'name'] as const).map((mode) => (
-                  <label key={mode}>
-                    <input
-                      type="radio"
-                      name="pronunciation"
-                      value={mode}
-                      checked={pronunciation === mode}
-                      onChange={() => {
-                        setPronunciation(mode);
-                        api.current?.setPronunciation(mode);
-                        api.current?.pronounce();
-                      }}
-                    />
-                    {mode === 'sound' ? 'Sound · 그' : 'Name · 기역'}
-                  </label>
-                ))}
-              </div>
-              <p>
-                Sound uses 그 (geu): ㄱ with a short vowel to make it audible.
-              </p>
-            </fieldset>
             <p className="lesson-intro">
-              A single stroke. A sharp turn.
+              {vowel.cuts.length}{' '}
+              {vowel.cuts.length === 1 ? 'flow cut' : 'flow cuts'}. One vowel.
               <br />
-              The first step in your Hangul journey.
+              Sound and letter name are the same for these vowels.
             </p>
             <div className="divider" />
             <div className="section-label">
               <span>THE MOVEMENT</span>
-              <span>2 CUT COMBO</span>
+              <span>
+                {vowel.cuts.length} CUT{vowel.cuts.length > 1 ? 'S' : ''}
+              </span>
             </div>
             <div className={`movement ${status.progress >= 50 ? 'done' : ''}`}>
-              <span className="step-number">01</span>
+              <span className="step-number">
+                {Math.min((status.cutIndex ?? 0) + 1, vowel.cuts.length)}
+              </span>
               <div>
                 <strong>
-                  {status.progress >= 50
-                    ? '02 · Downward cut'
-                    : '01 · Rightward slash'}
+                  {status.phase === 'complete'
+                    ? 'Character complete'
+                    : vowel.directions[status.cutIndex ?? 0]}
                 </strong>
-                <p>Sweep across. Recover. Strike down.</p>
+                <p>Follow each numbered cut in order.</p>
               </div>
               <div className="direction">
-                <ArrowRight size={18} />
-                <ArrowDown size={18} />
+                {vowel.cuts.map((cut, i) =>
+                  cut[20].x > cut[0].x ? (
+                    <ArrowRight key={i} size={18} />
+                  ) : (
+                    <ArrowDown key={i} size={18} />
+                  ),
+                )}
               </div>
             </div>
             <div className="tip">
               <Sparkles size={17} />
               <p>
                 Use broad, controlled katana arcs. Release between cuts to reset
-                your stance. The first cut stays lit.
+                your stance. Completed cuts stay lit.
               </p>
             </div>
             <div className="master-caption" aria-live="polite">
               <span>THE MASTER</span>
               <strong lang="ko">{status.master?.ko ?? '준비됐느냐?'}</strong>
               <p>
-                {status.master?.en ??
-                  `Ready? Begin practice to hear ${pronunciation === 'sound' ? 'the ㄱ sound.' : 'giyeok.'}`}
+                {status.master?.en ?? `Ready? Begin to hear ${vowel.roman}.`}
               </p>
             </div>
             <div className="progress-section">
               <div>
                 <span>
                   {status.phase === 'complete'
-                    ? 'STROKE COMPLETE'
-                    : 'STROKE PROGRESS'}
+                    ? 'CHARACTER COMPLETE'
+                    : 'CHARACTER PROGRESS'}
                 </span>
                 <strong>
                   {status.progress}
@@ -272,24 +327,28 @@ export default function Home() {
             <button
               className="primary-button"
               disabled={!loaded}
-              onClick={reset}
+              onClick={advance}
             >
               {status.phase === 'complete' ? (
                 <RotateCcw size={18} />
               ) : (
                 <Swords size={18} />
               )}{' '}
-              {status.phase === 'complete'
-                ? 'Practice again'
-                : 'Begin flow practice'}
+              {finished
+                ? 'Replay Level 1'
+                : stage === 'intro'
+                  ? 'Begin Level 1'
+                  : stage === 'character-complete'
+                    ? `Next: ${VOWELS[Math.min(5, index + 1)].glyph}`
+                    : 'Restart character'}
               <ArrowRight size={18} />
             </button>
             <button
               className="secondary-button"
-              disabled={!loaded}
+              disabled={!loaded || finished}
               onClick={() => api.current?.demonstrate()}
             >
-              <Play size={15} /> Watch the stroke
+              <Play size={15} /> Watch this character
             </button>
           </aside>
         </div>
@@ -425,27 +484,25 @@ export default function Home() {
         <h2 id="help-title">One stroke at a time.</h2>
         <h3>On desktop</h3>
         <p>
-          In Flow cuts, hold and drag right through the horizontal guide, then
-          cut down the vertical guide. You can release between cuts to
-          reposition. You can also use touch, or focus the dojo and use the
-          arrow keys while holding Space. Press R to restart.
+          Begin Level 1, then hold and drag along each numbered stroke in order.
+          Release between cuts to reposition. Completed strokes stay lit. Use
+          arrow keys while holding Space for keyboard practice. Press R to
+          restart a character.
         </p>
         <h3>In Meta Quest</h3>
         <p>
-          Open this page over HTTPS in Quest Browser, then select Enter VR. Stay
-          in place. Hold either controller’s trigger and move the sword tip
-          across the guide with a controlled rightward slash, then a downward
-          cut. Flow cuts accepts natural arcs and preserves the first cut when
-          you release. After completing, press the trigger to practice again.
-          Squeeze the grip to recenter the guide in front of you.
+          Enter VR and press a trigger to begin the level. Follow the numbered
+          cuts with the katana tip. After completing a character, release and
+          press the trigger to advance. After the sixth vowel, the level
+          completion message stays visible until you replay. Squeeze the grip to
+          recenter the guide.
         </p>
         <h3>The master</h3>
         <p>
-          Choose Sound to hear ㄱ in 그 (geu), or Name to hear 기역 (giyeok).
-          Your choice plays at the beginning of practice and after a completed
-          character. Mistakes earn a stern Korean correction with English
-          subtitles. Valid recovery between flow cuts is allowed. Use Hear ㄱ to
-          replay your choice or the Master toggle to mute narration.
+          Hear the vowel once at the beginning and once at full completion.
+          Every third completion adds Korean encouragement with English
+          subtitles. Use Hear {vowel.glyph} to replay or Master to mute. Levels
+          2–6 are upcoming.
         </p>
         <h3>Your katana</h3>
         <p>

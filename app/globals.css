@@ -1038,3 +1038,102 @@ footer > span:nth-child(2) {
 [data-master-gesture] canvas[hidden] {
   display: none;
 }
+
+.level-roadmap {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 18px;
+}
+.level-roadmap > div {
+  padding: 14px;
+  border: 1px solid #36433e;
+  border-radius: 8px;
+  background: #1e2825;
+}
+.level-roadmap span {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: #a5b1a9;
+}
+.level-roadmap strong {
+  display: block;
+  margin: 8px 0;
+  color: #dedacc;
+  font-size: 13px;
+}
+.level-roadmap p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #9fab9e;
+  margin: 0;
+}
+.level-roadmap .current-level {
+  border-color: #d6b477;
+  background: #333629;
+}
+.level-banner {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  margin-bottom: 18px;
+  border: 1px solid #746446;
+  border-radius: 10px;
+  background: linear-gradient(110deg, #343b2e, #1e2a27);
+}
+.level-banner h2 {
+  font-size: 25px;
+  margin: 8px 0;
+  color: #f0dfbc;
+}
+.level-banner p {
+  color: #bdc5b9;
+  max-width: 650px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.vowel-progress {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.vowel-progress > span {
+  width: 42px;
+  text-align: center;
+  padding: 8px 0;
+  border: 1px solid #515f51;
+  border-radius: 7px;
+  color: #9caa9c;
+  font-size: 26px;
+}
+.vowel-progress small {
+  display: block;
+  font-size: 11px;
+}
+.vowel-progress .current {
+  border-color: #e5c180;
+  color: #ffe0a3;
+}
+.vowel-progress .learned {
+  background: #425539;
+  color: #dceec7;
+}
+@media (max-width: 1000px) {
+  .level-roadmap {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .level-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+@media (max-width: 520px) {
+  .level-roadmap {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .level-banner {
+    padding: 18px;
+  }
+}

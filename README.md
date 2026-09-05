@@ -1,3 +1,15 @@
+# Hangul Ninja · Level 1
+
+The playable curriculum now begins with six basic vowels: ㅏ a, ㅓ eo, ㅗ o, ㅜ u, ㅡ eu, ㅣ i. A level introduction precedes practice; each completed character waits for Next/trigger, and the sixth ends on a persistent Level 1 completion state. Replay returns to ㅏ. Progress is session-local.
+
+The six-level roadmap follows the requested order: Basic vowels, Basic consonants, Y vowels, Aspirated consonants, Tense consonants, Compound vowels. Only Level 1 is currently playable; the others are explicitly marked coming soon. The original ㄱ recognition module remains covered by tests for later consonant-level work.
+
+Each vowel is described by ordered independent cuts. The recognizer validates direction, swept coverage, depth and tracking continuity, preserves completed cuts during release, and never draws a connector between separate strokes. The guide, demonstration, pronunciation, feedback and controller progression use the active vowel. Vowels use the same spoken name and sound, so no name/sound selector is shown in Level 1. Music starts off; only the katana is rendered for the player. All six Korean audio clips are bundled locally.
+
+Romanization reference: [National Institute of Korean Language](https://www.korean.go.kr/front_eng/roman/roman_01.do).
+
+## Prototype implementation notes (earlier iterations)
+
 # Hangul Ninja
 
 WebXR prototype v0.6: a stationary timber dojo, glowing controller sword trail, and a guided ㄱ (giyeok) lesson. The desktop preview and VR sword share ordered stroke recognition. Flow cuts is the only practice mode: a rightward slash, then a downward cut.
@@ -54,7 +66,7 @@ Desktop and Quest display only the katana. In Quest, the weapon is attached dire
 
 ## Korean master voice
 
-Bundled PCM WAV voice clips pronounce 기역 when practice starts and 잘했다. 기역! after completion. Three stern Korean corrections rotate after failed gestures, with a 4.5-second cooldown. Valid recovery between landed flow cuts, tiny clicks, tracking loss, and visibility changes do not trigger scolding. English/Korean captions render in both the sidebar and XR scene. Use Hear ㄱ to replay pronunciation, Master to mute narration, and Volume for the master level. Music ducks while a voice clip plays.
+Bundled PCM WAV voice clips pronounce the active character at the start and after full completion. Every third completion adds a rotating Korean encouragement. Three stern Korean corrections rotate after failed gestures, with a 4.5-second cooldown. Valid recovery between landed flow cuts, tiny clicks, tracking loss, and visibility changes do not trigger scolding. English/Korean captions render in both the sidebar and XR scene. Use Hear ㄱ to replay pronunciation, Master to mute narration, and Volume for the master level. Music ducks while a voice clip plays.
 
 Clips were synthesized locally with the installed Korean Yuna voice. No browser Korean voice installation or runtime speech service is required. Playback starts on a practice interaction, consistent with browser autoplay restrictions; a blocked or failed playback shows a replay hint. Voice playback pauses on hidden sessions and is cleaned up on disposal. Tests validate cue decisions and WAV assets; listening quality and immersive playback still need Quest validation.
 
