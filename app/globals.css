@@ -1278,3 +1278,7 @@ footer > span:nth-child(2) {
     margin-left: auto;
   }
 }
+
+@media (max-width: 720px) {
+  .scene-bottom .fullscreen-dojo-button { display: none; }
+}

@@ -232,9 +232,6 @@ export default function Home() {
               </section>
             )}
             <div className="scene-top">
-              <span className="mode-pill">
-                <span /> DESKTOP PREVIEW
-              </span>
               <span className="scene-location">
                 고요한 도장 <span>·</span> THE QUIET DOJO
               </span>
