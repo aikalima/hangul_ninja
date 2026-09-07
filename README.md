@@ -125,7 +125,7 @@ If deployment reports an IAM error, have your project administrator check the de
 ## Play on desktop
 
 1. Select **Begin Level 1**.
-2. Hold the mouse button or touch and drag the katana tip through the numbered cuts in order. The tip stays directly under your pointer.
+2. Hold the mouse button or touch and drag to hold the katana at its grip. Guide the offset blade tip through the numbered cuts in order.
 3. Release between cuts to reposition. Completed cuts remain lit; an unfinished cut restarts when released.
 4. Use **Watch this character** for a demonstration or **Hear** to replay pronunciation.
 

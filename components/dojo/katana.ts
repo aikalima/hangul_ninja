@@ -7,6 +7,18 @@ export const KATANA_TRAIL_INNER = new THREE.Vector3(0.046, 0, -0.84);
 export const DESKTOP_SWORD_OFFSET = new THREE.Vector3(0.22, -0.27, 0.84)
   .normalize()
   .multiplyScalar(0.9);
+// The pointer holds the center of the handle; the blade tip stays offset.
+export const KATANA_TOUCH_POINT = new THREE.Vector3(0, 0, -0.005);
+export const DESKTOP_TIP_OFFSET = KATANA_TIP.clone().sub(KATANA_TOUCH_POINT).applyQuaternion(
+  new THREE.Quaternion().setFromRotationMatrix(
+    new THREE.Matrix4().lookAt(
+      DESKTOP_SWORD_OFFSET,
+      new THREE.Vector3(),
+      new THREE.Vector3(0, 1, 0),
+    ),
+  ),
+);
+
 export function createKatana() {
   const group = new THREE.Group();
   const steel = new THREE.MeshStandardMaterial({

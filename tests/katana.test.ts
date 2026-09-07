@@ -6,6 +6,8 @@ import {
   KATANA_TIP,
   KATANA_TRAIL_INNER,
   DESKTOP_SWORD_OFFSET,
+  KATANA_TOUCH_POINT,
+  DESKTOP_TIP_OFFSET,
 } from '../components/dojo/katana.ts';
 
 void test('katana scoring landmark matches the modeled curved tip', () => {
@@ -53,7 +55,7 @@ void test('desktop reanchoring keeps the curved katana tip on the tracing cursor
   }
 });
 
-void test('physical blade tip stays under the pointer on mobile and desktop', () => {
+void test('handle stays under the pointer while the blade tip scores on mobile and desktop', () => {
   for (const aspect of [0.5, 1.6]) {
     const camera = new THREE.PerspectiveCamera(64, aspect, 0.01, 100);
     camera.position.set(0, 1.72, 0.85);
@@ -62,8 +64,9 @@ void test('physical blade tip stays under the pointer on mobile and desktop', ()
     const raycaster = new THREE.Raycaster();
     for (const pointer of [new THREE.Vector2(-0.3, -0.4), new THREE.Vector2(0.3, 0.2)]) {
       raycaster.setFromCamera(pointer, camera);
-      const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -(-1.12 + 0.025));
+      const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -(-1.12 + 0.025 - DESKTOP_TIP_OFFSET.z));
       const target = raycaster.ray.intersectPlane(plane, new THREE.Vector3())!;
+      target.add(DESKTOP_TIP_OFFSET);
       const sword = new THREE.Group();
       sword.position.copy(target).add(DESKTOP_SWORD_OFFSET);
       sword.lookAt(target);
@@ -72,9 +75,9 @@ void test('physical blade tip stays under the pointer on mobile and desktop', ()
       const tip = KATANA_TIP.clone().applyMatrix4(sword.matrixWorld);
       sword.position.sub(tip.sub(target));
       sword.updateMatrixWorld(true);
-      const projectedTip = KATANA_TIP.clone().applyMatrix4(sword.matrixWorld).project(camera);
-      assert.ok(Math.abs(projectedTip.x - pointer.x) < 1e-8);
-      assert.ok(Math.abs(projectedTip.y - pointer.y) < 1e-8);
+      const projectedGrip = KATANA_TOUCH_POINT.clone().applyMatrix4(sword.matrixWorld).project(camera);
+      assert.ok(Math.abs(projectedGrip.x - pointer.x) < 1e-8);
+      assert.ok(Math.abs(projectedGrip.y - pointer.y) < 1e-8);
       const actualTip = KATANA_TIP.clone().applyMatrix4(sword.matrixWorld);
       assert.ok(actualTip.distanceTo(target) < 1e-8);
       assert.ok(Math.abs(actualTip.z - (-1.12 + 0.025)) < 1e-8);
