@@ -260,6 +260,8 @@ export function createDojo(
   let lastSavedProgress = '';
   const audio = new DojoAudio();
   const effects = createEffects(scene, lessonRoot);
+  let effectsCharacter = characters[characterIndex];
+  effects.setTargets(effectsCharacter.cuts, savedProgress?.completedCuts ?? 0);
   const celebration = createCelebration(
     lessonRoot,
     host.parentElement?.querySelector<HTMLElement>('[data-master-gesture]') ??
@@ -594,7 +596,7 @@ export function createDojo(
         );
         celebration.play();
       }
-      effects.cut(hitPosition, complete);
+      effects.cut(hitPosition, complete, before);
       const source =
         activeController >= 0
           ? (controllers[activeController].userData.source as XRInputSource)
@@ -1139,7 +1141,15 @@ export function createDojo(
     listenerUp.set(0, 1, 0).transformDirection(view.matrixWorld);
     audio.listener(listenerPosition, listenerForward, listenerUp);
     audio.tick(lesson.progress / 100);
-    effects.update(dt, elapsed, false, lesson.progress);
+    if (effectsCharacter !== characters[characterIndex]) {
+      effectsCharacter = characters[characterIndex];
+      effects.setTargets(effectsCharacter.cuts, lesson.completedCuts);
+    }
+    effects.update(
+      dt, elapsed,
+      stage === 'active' || stage === 'review-active' || stage === 'character-complete',
+      lesson.completedCuts,
+    );
     celebration.update(dt, renderer.xr.isPresenting);
     warm.intensity =
       9 + Math.sin(elapsed * 1.6) * 0.6 + Math.min(swordSpeed, 5) * 0.2;

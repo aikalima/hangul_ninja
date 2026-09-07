@@ -67,7 +67,8 @@ export function createEffects(scene: THREE.Scene, lessonRoot: THREE.Group) {
   pulse.position.z = 0.025;
   let head = 0,
     pulseAge = 10;
-  const gates = [new THREE.Group(), new THREE.Group()];
+  const gates: THREE.Group[] = [];
+  const gateGeometry = new THREE.BoxGeometry(0.024, 0.048, 0.026);
   const gateMaterial = new THREE.MeshStandardMaterial({
     color: '#dab578',
     emissive: '#986429',
@@ -76,21 +77,27 @@ export function createEffects(scene: THREE.Scene, lessonRoot: THREE.Group) {
     roughness: 0.45,
   });
   const halves: THREE.Mesh[][] = [];
-  const ages = [-1, -1];
-  gates.forEach((group, i) => {
-    group.position.set(0.45, i === 0 ? 0.45 : -0.45, 0);
-    lessonRoot.add(group);
-    const pair = [-1, 1].map((side) => {
-      const m = new THREE.Mesh(
-        new THREE.BoxGeometry(0.06, 0.12, 0.065),
-        gateMaterial,
-      );
-      m.position.x = side * 0.035;
-      group.add(m);
-      return m;
+  const ages: number[] = [];
+  function setTargets(cuts: readonly (readonly { x: number; y: number }[])[], completedCuts: number) {
+    while (gates.length < cuts.length) {
+      const group = new THREE.Group();
+      lessonRoot.add(group);
+      gates.push(group);
+      halves.push([-1, 1].map((side) => {
+        const mesh = new THREE.Mesh(gateGeometry, gateMaterial);
+        mesh.position.x = side * 0.014;
+        group.add(mesh);
+        return mesh;
+      }));
+    }
+    ages.length = gates.length;
+    gates.forEach((gate, i) => {
+      const end = cuts[i]?.at(-1);
+      gate.userData.hasTarget = !!end;
+      if (end) gate.position.set(end.x, end.y, 0.025);
+      ages[i] = i < completedCuts ? 2 : -1;
     });
-    halves.push(pair);
-  });
+  }
   function burst(position: THREE.Vector3, complete: boolean) {
     const total = complete ? 95 : 38;
     for (let j = 0; j < total; j++) {
@@ -110,8 +117,9 @@ export function createEffects(scene: THREE.Scene, lessonRoot: THREE.Group) {
     }
   }
   return {
-    cut(position: THREE.Vector3, complete: boolean) {
-      ages[complete ? 1 : 0] = 0;
+    setTargets,
+    cut(position: THREE.Vector3, complete: boolean, cutIndex: number) {
+      ages[cutIndex] = 0;
       burst(position, complete);
     },
     reset() {
@@ -119,21 +127,20 @@ export function createEffects(scene: THREE.Scene, lessonRoot: THREE.Group) {
       lives.fill(0);
       pulseAge = 10;
     },
-    update(dt: number, time: number, flow: boolean, progress: number) {
+    update(dt: number, time: number, visible: boolean, completedCuts: number) {
       pulseAge += dt;
       pulse.scale.setScalar(1 + pulseAge * 2);
       pulseMaterial.opacity = Math.max(0, 0.5 - pulseAge * 0.45);
       gates.forEach((gate, i) => {
-        gate.visible = flow;
-        const active =
-          i === 0 ? progress < 50 : progress >= 50 && progress < 100;
+        gate.visible = visible && gate.userData.hasTarget;
+        const active = i === completedCuts;
         if (ages[i] >= 0) ages[i] += dt;
         const age = ages[i];
         gate.rotation.z = active ? Math.sin(time * 2) * 0.1 : 0;
         halves[i].forEach((half, j) => {
           const side = j === 0 ? -1 : 1;
           half.position.set(
-            side * (0.035 + Math.max(0, age) * 0.65),
+            side * (0.014 + Math.max(0, age) * 0.65),
             age < 0 ? 0 : -age * age * 0.8,
             0,
           );

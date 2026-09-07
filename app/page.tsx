@@ -243,7 +243,7 @@ export default function Home() {
                 <p>
                   {courseFinished
                     ? 'You’ve completed all 40 characters. Return to Level 1 for another round.'
-                    : `${characters.length} characters completed. Next: ${LEVELS[levelIndex + 1].title}. Confirm when you’re ready.`}
+                    : `${characters.length} characters completed. Next: ${LEVELS[levelIndex + 1].title}.`}
                 </p>
                 <button
                   className="primary-button"
