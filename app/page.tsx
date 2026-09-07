@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { EXAMPLE_WORDS } from '@/lib/example-words';
 import { readProgress } from '@/lib/progress';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -116,6 +117,7 @@ export default function Home() {
   const level = LEVELS[levelIndex];
   const characters = CURRICULUM[levelIndex];
   const vowel = characters[index];
+  const example = EXAMPLE_WORDS[vowel.glyph];
   const courseFinished = levelIndex === LEVELS.length - 1;
   const stage = status.stage ?? 'intro';
   const finished = stage === 'level-complete';
@@ -195,6 +197,19 @@ export default function Home() {
         <div className="dojo-layout">
           <section className="viewport-shell" aria-label="Interactive 3D dojo">
             <div ref={host} className="scene" />
+            {stage === 'character-complete' && (
+              <section className="example-word" aria-label="Example word" aria-live="polite">
+                <p className="example-letter"><strong lang="ko">{vowel.glyph}</strong> IN A WORD</p>
+                <p className="example-korean" lang="ko">
+                  {Array.from(example.word).map((block, i) => i === example.syllableIndex
+                    ? <strong key={i}>{block}</strong> : <span key={i}>{block}</span>)}
+                </p>
+                <p className="example-meaning">{example.meaning}</p>
+                <button className="secondary-button" onClick={() => api.current?.replayExample()}>
+                  <Volume2 size={18} /> Hear word again
+                </button>
+              </section>
+            )}
             {finished && (
               <section className="review-overlay" aria-label="Level complete">
                 <span className="eyebrow">LEVEL {levelIndex + 1} COMPLETE</span>

@@ -1,3 +1,4 @@
+import { EXAMPLE_WORDS, EXAMPLE_DISPLAY_MS } from '@/lib/example-words';
 import { readProgress, writeProgress, progressCheckpoint } from '@/lib/progress';
 import { MASTER_WELCOME, VOICE_LINES } from '@/lib/voice-lines';
 import * as THREE from 'three';
@@ -47,6 +48,7 @@ export type DojoAPI = {
   setVoice: (v: boolean) => void;
   setPronunciation: (mode: PronunciationMode) => void;
   pronounce: () => void;
+  replayExample: () => void;
   setMusic: (v: boolean) => void;
   setVolume: (v: number) => void;
   dispose: () => void;
@@ -226,6 +228,10 @@ export function createDojo(
   subtitle.sprite.position.set(0, 1.02, 0.03);
   subtitle.sprite.visible = false;
   lessonRoot.add(subtitle.sprite);
+  const examplePanel = makeText(1.45, 400);
+  examplePanel.sprite.position.set(0, 0.05, 0.12);
+  examplePanel.sprite.visible = false;
+  lessonRoot.add(examplePanel.sprite);
   const reviewPanel = makeText(1.45, 360);
   lessonRoot.add(reviewPanel.sprite);
   reviewPanel.sprite.visible = false;
@@ -323,6 +329,35 @@ export function createDojo(
     const phase = watching ? 'watching' : lesson.state;
     const progress = watching ? 0 : lesson.progress;
     const vowel = characters[characterIndex];
+    if (stage === 'character-complete') {
+      const example = EXAMPLE_WORDS[vowel.glyph];
+      const c = examplePanel.ctx;
+      c.clearRect(0, 0, 1024, 400);
+      c.fillStyle = '#17221ef5';
+      c.fillRect(0, 0, 1024, 400);
+      c.textAlign = 'center';
+      c.fillStyle = '#edb375';
+      c.font = 'bold 42px Arial';
+      c.fillText(vowel.glyph + ' · IN A WORD', 512, 75);
+      const blocks = Array.from(example.word);
+      const widths = blocks.map((block, i) => {
+        c.font = `${i === example.syllableIndex ? '900' : '400'} 110px Arial`;
+        return c.measureText(block).width;
+      });
+      let x = (1024 - widths.reduce((a, b) => a + b, 0)) / 2;
+      c.textAlign = 'left';
+      blocks.forEach((block, i) => {
+        c.font = `${i === example.syllableIndex ? '900' : '400'} 110px Arial`;
+        c.fillStyle = i === example.syllableIndex ? '#edb375' : '#fff6e5';
+        c.fillText(block, x, 235);
+        x += widths[i];
+      });
+      c.textAlign = 'center';
+      c.font = '36px Arial';
+      c.fillStyle = '#fff6e5';
+      c.fillText(example.meaning, 512, 325);
+      examplePanel.texture.needsUpdate = true;
+    }
     const message =
       stage === 'review-ready'
         ? 'TIMED REVIEW · All six vowels. Pass to finish Level 1.'
@@ -547,9 +582,7 @@ export function createDojo(
         } else {
           stage = 'character-complete';
           // Let the learner see the final completed glyph before covering it.
-          nextCharacterAt =
-            performance.now() +
-            (characterIndex === characters.length - 1 ? 2000 : 3000);
+          nextCharacterAt = performance.now() + EXAMPLE_DISPLAY_MS;
         }
         voice.success(
           lesson.progress,
@@ -1157,7 +1190,9 @@ export function createDojo(
       reviewScreen && stage !== 'review-active' && stage !== 'review-between';
     reviewPanel.sprite.visible = reviewScreen && renderer.xr.isPresenting;
     reviewPanel.sprite.position.set(0, blockingReview ? 0.05 : 0.9, 0.06);
-    guideRoot.visible = !blockingReview;
+    const showingExample = stage === 'character-complete';
+    examplePanel.sprite.visible = showingExample && renderer.xr.isPresenting;
+    guideRoot.visible = !blockingReview && !showingExample;
     if (blockingReview) {
       target.visible = false;
       spark.visible = false;
@@ -1237,6 +1272,12 @@ export function createDojo(
     setPronunciation(mode) {
       voice.setPronunciation(mode);
     },
+    replayExample() {
+      if (stage !== 'character-complete') return;
+      audio.unlock();
+      voice.replayExample();
+      nextCharacterAt = performance.now() + EXAMPLE_DISPLAY_MS;
+    },
     pronounce() {
       audio.unlock();
       voice.replay();
@@ -1277,7 +1318,7 @@ export function createDojo(
       });
       geometries.forEach((g) => g.dispose());
       mats.forEach((m) => m.dispose());
-      [heading, feedback, arrow, subtitle, reviewPanel].forEach((t) =>
+      [heading, feedback, arrow, subtitle, reviewPanel, examplePanel].forEach((t) =>
         t.texture.dispose(),
       );
       renderer.dispose();

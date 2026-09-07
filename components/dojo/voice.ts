@@ -1,3 +1,4 @@
+import { EXAMPLE_WORDS } from '../../lib/example-words.ts';
 import {
   VOICE_LINES,
   pronunciationLine,
@@ -137,7 +138,10 @@ export class MasterVoice {
   success(progress: number, levelFinished = false, courseFinished = false) {
     if (progress < 100 || this.completed) return;
     this.completed = true;
-    const line = this.characterLine('success');
+    const example = this.character && EXAMPLE_WORDS[this.character.glyph];
+    const line = example
+      ? { id: 'example', file: example.file, ko: example.word, en: example.meaning }
+      : this.characterLine('success');
     const praise = this.enabled
       ? levelFinished
         ? courseFinished
@@ -150,6 +154,10 @@ export class MasterVoice {
       this.speak(line);
       this.pendingPraise = this.enabled ? praise : null;
     }, 500);
+  }
+  replayExample() {
+    const example = this.character && EXAMPLE_WORDS[this.character.glyph];
+    if (example) this.speak({ id: 'example', file: example.file, ko: example.word, en: example.meaning });
   }
   mistake() {
     if (++this.mistakes % 3 !== 0) return;

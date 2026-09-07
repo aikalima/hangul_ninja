@@ -131,7 +131,7 @@ If deployment reports an IAM error, have your project administrator check the de
 
 For keyboard practice, focus the dojo, hold **Space**, and move with the **arrow keys**. Press **R** to restart the current character. Touch dragging is also supported.
 
-After a successful character, the next one appears automatically after three seconds. At the end of a level, confirm **I’m ready** in the center panel to advance, or choose to practice the level again. Completing Level 6 offers a restart from Level 1.
+After a successful character, a common Korean example word appears in the center for seven seconds, with its English meaning and the syllable containing the learned letter in bold. The word is read aloud; **Hear word again** replays it and restarts the display timer. The next character then appears automatically. At the end of a level, confirm **I’m ready** in the center panel to advance, or choose to practice the level again. Completing Level 6 offers a restart from Level 1.
 
 ## Play in Meta Quest Browser
 
@@ -163,7 +163,7 @@ Cuts are adapted for gameplay: corners and circular arcs can be separate cuts, s
 
 ## Voice and audio
 
-Pronunciation plays when a character begins and 500 milliseconds after full completion, rather than after each cut. Consonants offer **sound** and **name** playback. Sound examples use a supporting vowel where needed; ㅇ is silent at the start of a syllable and `ng` at the end, demonstrated with 응.
+Letter pronunciation plays when a character begins. A bundled example word plays 500 milliseconds after full completion, followed by occasional praise. Consonants offer **sound** and **name** playback. Sound examples use a supporting vowel where needed; ㅇ is silent at the start of a syllable and `ng` at the end, demonstrated with 응.
 
 With master audio enabled, every third non-final character completion rotates through 잘했어요, 잘했어, 대박, 화이팅, and 최고. Level endings use separate congratulations. Mistakes can trigger Korean corrections with a cooldown. The master card retains the latest translation between messages.
 
