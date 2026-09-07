@@ -276,8 +276,8 @@ export default function Home() {
                 </button>
                 <button
                   className="fullscreen-dojo-button"
-                  title="Fullscreen dojo"
-                  aria-label="Fullscreen dojo"
+                  title="Immersive Dojo"
+                  aria-label="Immersive Dojo"
                   onClick={() =>
                     host.current?.parentElement
                       ?.requestFullscreen()
@@ -287,7 +287,7 @@ export default function Home() {
                   }
                 >
                   <Maximize2 size={18} aria-hidden="true" />
-                  <span>Fullscreen dojo</span>
+                  <span>Immersive Dojo</span>
                 </button>
               </div>
             </div>
