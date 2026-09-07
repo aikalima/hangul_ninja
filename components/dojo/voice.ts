@@ -44,6 +44,12 @@ export class MasterVoice {
   }
   private completions = 0;
   private pendingPraise: VoiceLine | null = null;
+  private examplePriority = false;
+  private speaking = false;
+  get completionPending() {
+    return this.completed && (this.completionTimer !== undefined || this.examplePriority || this.speaking);
+  }
+  private commentTimer: ReturnType<typeof setTimeout> | undefined;
   private lastMistake = -Infinity;
   private mistakeIndex = 0;
   private mistakes = 0;
@@ -64,17 +70,28 @@ export class MasterVoice {
     this.player.preload = 'auto';
     this.player.volume = 0.5;
     this.player.onended = () => {
-      const praise = this.pendingPraise;
-      this.pendingPraise = null;
-      if (praise && this.enabled && !this.disposed) {
-        this.speak(praise);
+      this.speaking = false;
+      clearTimeout(this.timer);
+      clearTimeout(this.commentTimer);
+      this.duck(false);
+      if (this.pendingPraise && this.enabled && !this.disposed) {
+        // Keep the word's priority through a full second of silence.
+        this.commentTimer = setTimeout(() => {
+          this.commentTimer = undefined;
+          const praise = this.pendingPraise;
+          this.pendingPraise = null;
+          this.examplePriority = false;
+          if (praise && this.enabled && !this.disposed) this.speak(praise);
+        }, 1000);
         return;
       }
-      this.duck(false);
-      if (this.timer) clearTimeout(this.timer);
+      this.examplePriority = false;
       this.timer = setTimeout(() => this.clear(), 1800);
     };
     this.player.onerror = () => {
+      this.speaking = false;
+      this.examplePriority = false;
+      clearTimeout(this.commentTimer);
       this.pendingPraise = null;
       this.duck(false);
       this.onLine(
@@ -98,21 +115,34 @@ export class MasterVoice {
   }
   private speak(line: VoiceLine) {
     if (this.disposed) return;
+    if (this.examplePriority && line.id !== 'example') {
+      this.pendingPraise ??= line;
+      return;
+    }
     this.cancelCompletion();
-    this.pendingPraise = null;
+    clearTimeout(this.commentTimer);
+    this.commentTimer = undefined;
+    if (line.id !== 'example') this.pendingPraise = null;
     this.player.pause();
+    this.speaking = false;
     this.clear();
     this.current = line;
     this.onLine(line);
     this.timer = setTimeout(() => {
-      this.player.pause();
-      this.clear();
+      this.pause();
     }, 8000);
-    if (!this.enabled) return;
+    if (!this.enabled) {
+      this.examplePriority = false;
+      return;
+    }
     this.player.src = `/audio/${line.file}.wav`;
     this.duck(true);
+    this.speaking = true;
     void this.player.play().catch(() => {
-      if (this.current?.id === line.id) {
+      if (this.current === line) {
+        this.speaking = false;
+        this.examplePriority = false;
+        this.pendingPraise = null;
         this.duck(false);
         this.onLine({
           ...line,
@@ -149,15 +179,26 @@ export class MasterVoice {
           : VOICE_LINES.levelComplete
         : encouragementFor(++this.completions)
       : null;
+    const interruptedComment = this.speaking && this.current && !['intro', 'success', 'example'].includes(this.current.id)
+      ? this.current : null;
+    const queuedComment = praise ?? this.pendingPraise ?? interruptedComment;
+    this.pause();
+    this.examplePriority = !!example;
+    this.pendingPraise = this.enabled ? queuedComment : null;
     this.completionTimer = setTimeout(() => {
       this.completionTimer = undefined;
       this.speak(line);
-      this.pendingPraise = this.enabled ? praise : null;
+      if (!example) this.pendingPraise = this.enabled ? queuedComment : null;
     }, 500);
   }
   replayExample() {
     const example = this.character && EXAMPLE_WORDS[this.character.glyph];
-    if (example) this.speak({ id: 'example', file: example.file, ko: example.word, en: example.meaning });
+    if (example) {
+      if (this.speaking && this.current && !['intro', 'success', 'example'].includes(this.current.id))
+        this.pendingPraise ??= this.current;
+      this.examplePriority = true;
+      this.speak({ id: 'example', file: example.file, ko: example.word, en: example.meaning });
+    }
   }
   mistake() {
     if (++this.mistakes % 3 !== 0) return;
@@ -172,17 +213,16 @@ export class MasterVoice {
   }
   setEnabled(value: boolean) {
     this.enabled = value;
-    if (!value) {
-      this.cancelCompletion();
-      this.pendingPraise = null;
-      this.player.pause();
-      this.duck(false);
-    }
+    if (!value) this.pause();
   }
   setVolume(value: number) {
     this.player.volume = Math.max(0, Math.min(1, value));
   }
   pause() {
+    this.speaking = false;
+    this.examplePriority = false;
+    clearTimeout(this.commentTimer);
+    this.commentTimer = undefined;
     this.cancelCompletion();
     this.pendingPraise = null;
     this.player.pause();

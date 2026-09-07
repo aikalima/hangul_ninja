@@ -67,3 +67,88 @@ void test('completion reads the example word once after the delay and reset canc
     globalThis.Audio = originalAudio;
   }
 });
+
+void test('example words take priority and queued comments follow after one second, including replay', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { MasterVoice } = await import('../components/dojo/voice.ts');
+  const { VOICE_LINES } = await import('../lib/voice-lines.ts');
+  const originalAudio = globalThis.Audio;
+  const played: string[] = [];
+  const players: FakeAudio[] = [];
+  class FakeAudio {
+    src = '';
+    onended: (() => void) | null = null;
+    constructor() { players.push(this); }
+    play() { played.push(this.src); return Promise.resolve(); }
+    pause() {}
+    removeAttribute() {}
+    load() {}
+  }
+  globalThis.Audio = FakeAudio as unknown as typeof Audio;
+  const voice = new MasterVoice(() => {}, () => {});
+  try {
+    voice.setCharacter(CURRICULUM[0][0]);
+    voice.success(100, true);
+    t.mock.timers.tick(500);
+    const word = '/audio/example-1.wav';
+    assert.deepEqual(played, [word]);
+    for (let i = 0; i < 3; i++) voice.mistake();
+    t.mock.timers.tick(2000);
+    assert.deepEqual(played, [word], 'comments cannot interrupt the word');
+    players.at(-1)!.onended!();
+    t.mock.timers.tick(999);
+    assert.deepEqual(played, [word]);
+    assert.equal(voice.completionPending, true, 'auto-advance waits during the gap');
+    voice.replayExample();
+    t.mock.timers.tick(1);
+    assert.deepEqual(played, [word, word], 'replay cancels the earlier comment timer');
+    players.at(-1)!.onended!();
+    t.mock.timers.tick(999);
+    assert.equal(played.length, 2);
+    t.mock.timers.tick(1);
+    assert.deepEqual(played, [word, word, `/audio/${VOICE_LINES.levelComplete.file}.wav`]);
+    assert.equal(voice.completionPending, true, 'auto-advance waits for the comment');
+    players.at(-1)!.onended!();
+    assert.equal(voice.completionPending, false);
+  } finally {
+    voice.dispose();
+    globalThis.Audio = originalAudio;
+  }
+});
+
+void test('reset, mute and disposal cancel comments waiting after the word', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { MasterVoice } = await import('../components/dojo/voice.ts');
+  const originalAudio = globalThis.Audio;
+  const played: string[] = [];
+  const players: FakeAudio[] = [];
+  class FakeAudio {
+    src = '';
+    onended: (() => void) | null = null;
+    constructor() { players.push(this); }
+    play() { played.push(this.src); return Promise.resolve(); }
+    pause() {}
+    removeAttribute() {}
+    load() {}
+  }
+  globalThis.Audio = FakeAudio as unknown as typeof Audio;
+  try {
+    for (const action of ['reset', 'mute', 'dispose']) {
+      const voice = new MasterVoice(() => {}, () => {});
+      voice.setCharacter(CURRICULUM[0][0]);
+      voice.success(100, true);
+      t.mock.timers.tick(500);
+      players.at(-1)!.onended!();
+      if (action === 'reset') voice.setCharacter(CURRICULUM[0][1]);
+      else if (action === 'mute') voice.setEnabled(false);
+      else voice.dispose();
+      const count = played.length;
+      t.mock.timers.tick(1000);
+      assert.equal(played.length, count, action);
+      assert.equal(voice.completionPending, false, action);
+      voice.dispose();
+    }
+  } finally {
+    globalThis.Audio = originalAudio;
+  }
+});

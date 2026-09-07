@@ -49,6 +49,7 @@ export type DojoAPI = {
   setPronunciation: (mode: PronunciationMode) => void;
   pronounce: () => void;
   replayExample: () => void;
+  nextExample: () => void;
   setMusic: (v: boolean) => void;
   setVolume: (v: number) => void;
   dispose: () => void;
@@ -1029,7 +1030,8 @@ export function createDojo(
     if (
       stage === 'character-complete' &&
       !document.hidden &&
-      performance.now() >= nextCharacterAt
+      performance.now() >= nextCharacterAt &&
+      !voice.completionPending
     ) {
       pointerHeld = false;
       keyboardHeld = false;
@@ -1271,6 +1273,15 @@ export function createDojo(
     },
     setPronunciation(mode) {
       voice.setPronunciation(mode);
+    },
+    nextExample() {
+      if (stage !== 'character-complete') return;
+      voice.pause();
+      pointerHeld = false;
+      keyboardHeld = false;
+      activeController = -1;
+      keys.clear();
+      advance(true);
     },
     replayExample() {
       if (stage !== 'character-complete') return;

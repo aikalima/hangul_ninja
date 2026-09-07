@@ -205,9 +205,14 @@ export default function Home() {
                     ? <strong key={i}>{block}</strong> : <span key={i}>{block}</span>)}
                 </p>
                 <p className="example-meaning">{example.meaning}</p>
-                <button className="secondary-button" onClick={() => api.current?.replayExample()}>
-                  <Volume2 size={18} /> Hear word again
-                </button>
+                <div className="example-actions">
+                  <button className="secondary-button" onClick={() => api.current?.replayExample()}>
+                    <Volume2 size={18} /> Hear word again
+                  </button>
+                  <button className="primary-button" onClick={() => api.current?.nextExample()}>
+                    Next
+                  </button>
+                </div>
               </section>
             )}
             {finished && (
