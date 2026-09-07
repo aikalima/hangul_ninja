@@ -1,3 +1,4 @@
+import type { MasterPersona } from '@/lib/master-persona';
 import { EXAMPLE_WORDS, EXAMPLE_DISPLAY_MS } from '@/lib/example-words';
 import { readProgress, writeProgress, progressCheckpoint } from '@/lib/progress';
 import { MASTER_WELCOME, VOICE_LINES } from '@/lib/voice-lines';
@@ -48,6 +49,7 @@ export type DojoAPI = {
   setVoice: (v: boolean) => void;
   setPronunciation: (mode: PronunciationMode) => void;
   pronounce: () => void;
+  setPersona: (persona: MasterPersona) => void;
   replayExample: () => void;
   nextExample: () => void;
   setMusic: (v: boolean) => void;
@@ -1267,6 +1269,9 @@ export function createDojo(
           'VR could not start. Allow VR access in Quest Browser and try again.',
         );
       }
+    },
+    setPersona(persona) {
+      voice.setPersona(persona);
     },
     setVoice(v) {
       voice.setEnabled(v);

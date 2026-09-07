@@ -1272,3 +1272,17 @@ footer > span:nth-child(2) {
 .example-meaning { margin: 0 0 20px; font-size: 20px; }
 .example-actions { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; }
 .example-actions button { margin: 0; }
+
+.header-links { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.header-links .text-button { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; }
+.header-links .text-button span { margin-left: 0; }
+.header-links .text-button span, .settings-link svg { width: 16px; text-align: center; flex: 0 0 16px; }
+.settings-modal { width: min(440px, calc(100% - 32px)); }
+.persona-options { border: 0; padding: 0; margin: 0 0 24px; }
+.persona-options legend { margin-bottom: 16px; color: #c9d1cb; }
+.persona-option { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #46514c; border-radius: 10px; margin-bottom: 12px; cursor: pointer; }
+.persona-option:has(input:checked) { border-color: var(--orange); background: #ffffff08; }
+.persona-option input { accent-color: var(--orange); }
+.persona-option small { margin-left: auto; color: #bcc2bd; }
+
+.master-portrait { width: 64px; height: 72px; flex: 0 0 64px; filter: drop-shadow(0 3px 3px #0004); }

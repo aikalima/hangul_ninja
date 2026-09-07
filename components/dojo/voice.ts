@@ -1,3 +1,4 @@
+import { masterAudioPath, type MasterPersona } from '../../lib/master-persona.ts';
 import { EXAMPLE_WORDS } from '../../lib/example-words.ts';
 import {
   VOICE_LINES,
@@ -10,6 +11,10 @@ import {
 export class MasterVoice {
   private player: HTMLAudioElement;
   private enabled = true;
+  private persona: MasterPersona = 'yuna';
+  setPersona(persona: MasterPersona) {
+    this.persona = persona;
+  }
   private pronunciation: PronunciationMode = 'sound';
   private introduced = false;
   private completed = false;
@@ -135,7 +140,7 @@ export class MasterVoice {
       this.examplePriority = false;
       return;
     }
-    this.player.src = `/audio/${line.file}.wav`;
+    this.player.src = masterAudioPath(line.file, this.persona);
     this.duck(true);
     this.speaking = true;
     void this.player.play().catch(() => {

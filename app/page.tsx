@@ -1,9 +1,12 @@
 'use client';
 import Link from 'next/link';
+import { MasterPortrait } from '@/components/dojo/master-portrait';
+import { MASTER_PERSONA_KEY, type MasterPersona } from '@/lib/master-persona';
 import { EXAMPLE_WORDS } from '@/lib/example-words';
 import { readProgress } from '@/lib/progress';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Settings,
   ArrowRight,
   Check,
   Crosshair,
@@ -26,6 +29,8 @@ import type { PronunciationMode } from '@/lib/voice-lines';
 import type { DojoAPI, DojoStatus } from '@/components/dojo/engine';
 
 export default function Home() {
+  const settingsDialog = useRef<HTMLDialogElement>(null);
+  const [persona, setPersona] = useState<MasterPersona>('yuna');
   const dialog = useRef<HTMLDialogElement>(null);
   const welcomeDialog = useRef<HTMLDialogElement>(null);
   const demoSeen = useRef(false);
@@ -74,6 +79,13 @@ export default function Home() {
       .then(({ createDojo }) => {
         if (disposed || !host.current) return;
         api.current = createDojo(host.current, setStatus, setXR);
+        try {
+          const saved = localStorage.getItem(MASTER_PERSONA_KEY);
+          if (saved === 'minho') {
+            setPersona(saved);
+            api.current.setPersona(saved);
+          }
+        } catch { /* Keep the default when storage is unavailable. */ }
         setLoaded(true);
       })
       .catch(() =>
@@ -189,9 +201,14 @@ export default function Home() {
         <h1 className="header-level">
           <span>Level {levelIndex + 1}</span> · {level.title}
         </h1>
-        <button className="text-button" onClick={() => setHelp(true)}>
-          How to play <span>↗</span>
-        </button>
+        <div className="header-links">
+          <button className="text-button" onClick={() => setHelp(true)}>
+            How to play <span>↗</span>
+          </button>
+          <button className="text-button settings-link" onClick={() => settingsDialog.current?.showModal()}>
+            Settings <Settings size={16} />
+          </button>
+        </div>
       </header>
       <section className="workspace">
         <div className="dojo-layout">
@@ -596,6 +613,27 @@ export default function Home() {
           <span>DESIGNED FOR META QUEST</span>
         </footer>
       </section>
+      <dialog ref={settingsDialog} className="help-modal settings-modal" aria-labelledby="settings-title">
+        <button className="close" aria-label="Close settings" onClick={() => settingsDialog.current?.close()}><X /></button>
+        <h2 id="settings-title">Settings</h2>
+        <fieldset className="persona-options">
+          <legend>Choose your master</legend>
+          {(['yuna', 'minho'] as const).map((choice) => (
+            <label key={choice} className="persona-option">
+              <input type="radio" name="master-persona" value={choice} checked={persona === choice}
+                onChange={() => {
+                  setPersona(choice);
+                  api.current?.setPersona(choice);
+                  try { localStorage.setItem(MASTER_PERSONA_KEY, choice); } catch { /* This visit still works. */ }
+                }} />
+              <MasterPortrait persona={choice} />
+              <span>Master {choice === 'yuna' ? 'Yuna' : 'Minho'}</span>
+              {choice === 'yuna' && <small>Default</small>}
+            </label>
+          ))}
+        </fieldset>
+        <button className="primary-button" onClick={() => settingsDialog.current?.close()}>Done</button>
+      </dialog>
       <dialog
         ref={dialog}
         onClose={() => setHelp(false)}
