@@ -4,6 +4,8 @@
 
 Learn to recognize and draw Hangul through katana flow cuts in a stationary 3D dojo. Hangul Ninja is a browser-based WebXR prototype for Meta Quest Browser, with a desktop preview for playing and development without a headset.
 
+[Try it out](https://hangulninja.com)
+
 ## Features
 
 - Six guided levels covering 40 Hangul characters.
